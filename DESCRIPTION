@@ -1,0 +1,19 @@
+Package: growthfd
+Title: Fitting FPCA-based growth curve model
+Version: 0.0.0.9000
+Authors@R: c(person(given="Ondřej", family="Klíma", email="iklima@fit.vutbr.cz", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9295-065X")), person(given="Miroslav", family="Králik", email="kralik@sci.muni.cz", role = "ctb", comment = c(ORCID = "0000-0002-2077-4068")), person(given="Martin", family="Čuta", email="cuta@sci.muni.cz", role = "ctb", comment = c(ORCID = "0000-0001-6239-383X"))) 
+Description: This package provides a method for fiting an FPCA-based growth curve model described in the paper stated bellow. This research was funded by Technology Agency of the Czech Republic (Technologická agentura České republiky), grant number TL01000394.
+Citation: KRÁLÍK Miroslav, KLÍMA Ondřej, ČUTA Martin, MALINA Robert M., KOZIEL Slawomir, POLCEROVÁ Lenka, ŠKULTÉTYOVÁ Anna, ŠPANĚL Michal, KUKLA Lubomír a ZEMČÍK Pavel. Estimating Growth in Height from Limited Longitudinal Growth Data Using Full-Curves Training Dataset:A Comparison of Two Procedures of Curve Optimization-Functional Principal Component Analysis and SITAR. Children, roc. 8, c. 10, 2021, s. 934-955. ISSN 2227-9067
+License: use_gpl_license()
+Encoding: UTF-8
+RoxygenNote: 7.1.2
+Imports:
+    minpack.lm,
+    fda
+Depends: 
+    R (>= 2.10)
+LazyData: true
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

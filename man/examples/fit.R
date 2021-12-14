@@ -1,0 +1,11 @@
+age <- c(6.9, 8.2, 10, 12.1)
+height <- c(114, 122, 130, 141)
+fit <- growthfd.fit(model.bgs.m, age=c(6.9, 8.2, 10, 12.1), height=c(114, 122, 130, 141))
+x11()
+growthfd.plot(model.bgs.m, fit$par)
+points(age, height)
+x11()
+growthfd.plot(model.bgs.m, fit$par, from=0.5, deriv = 1)
+x11()
+growthfd.plot(model.bgs.m, fit$par, from=0.5, deriv = 2)
+
