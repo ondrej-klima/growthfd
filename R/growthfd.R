@@ -6,9 +6,9 @@
 #' @param par Phase and amplitude parameters
 #' @param model FPCA growth model 
 #' @return FDA function object
-#' @import fda 
 #' @export
 growthfd.std <- function(par, model) {
+  library('fda')
   nwarpscores <- model$scores.elements[1];
   ngrowthscores <- model$scores.elements[2];
   
@@ -25,7 +25,7 @@ growthfd.std <- function(par, model) {
     warpfd <- warpfd + warpscores[i]*sqrt(model$warpfpca$values[i])*model$warpfpca$harmonics[i];
   }
   
-  return(fda::register.newfd(growthfd, warpfd));
+  return(register.newfd(growthfd, warpfd));
 }
 
 #' Compute residuals
@@ -95,4 +95,8 @@ growthfd.plot <- function(model, par, deriv=0, from=0, to=18) {
 growthfd.fit <- function(model, age, height, nprint=1) {
   npar <- sum(model$scores.elements);
   return(minpack.lm::nls.lm(par=rep(0,npar), fn = growthfd.residuals, x = age, y = height, model=model, control = minpack.lm::nls.lm.control(nprint=1), upper=rep(3,npar), lower=rep(-3,npar)))
+}
+
+growthfd.growthfd <- function(data, x, y, id, model, verbose=1) {
+  
 }
