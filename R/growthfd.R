@@ -106,7 +106,8 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @param y Height at measured data points
 #' @param id Corresponding individual's id at measured data points
 #' @param verbose Verbosity
-#' @return List containing individuals id and model scores
+#' @return List containing individuals id and model 
+#' @example man/examples/main.R
 #' @export
 growthfd <- function(data, x, y, id, model, verbose=1) {
   mcall <- match.call()
