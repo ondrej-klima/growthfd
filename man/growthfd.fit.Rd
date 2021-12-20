@@ -2,7 +2,7 @@
 % Please edit documentation in R/growthfd.R
 \name{growthfd.fit}
 \alias{growthfd.fit}
-\title{Fit a FPCA Growth Curve Model to the Data}
+\title{Fit a FPCA Growth Curve Model to measurements of a single individual}
 \usage{
 growthfd.fit(model, age, height, nprint = 1)
 }
@@ -19,7 +19,7 @@ growthfd.fit(model, age, height, nprint = 1)
 An optimization result object
 }
 \description{
-This function fits a model to the given measured data.
+This function fits a model to the given measured data of a single individual.
 }
 \examples{
 age <- c(6.9, 8.2, 10, 12.1)

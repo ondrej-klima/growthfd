@@ -81,9 +81,9 @@ growthfd.plot <- function(model, par, deriv=0, from=0, to=18) {
   plot(x, growthfd.evaluate(x, par, model, deriv), xlab = "Age (years)", ylab = ylab, type="l", col="blue")
 }
 
-#' Fit a FPCA Growth Curve Model to the Data
+#' Fit a FPCA Growth Curve Model to measurements of a single individual
 #'
-#' This function fits a model to the given measured data.
+#' This function fits a model to the given measured data of a single individual.
 #'
 #' @param model FPCA growth model to be fitted
 #' @param age Age at measured data points
@@ -97,6 +97,31 @@ growthfd.fit <- function(model, age, height, nprint=1) {
   return(minpack.lm::nls.lm(par=rep(0,npar), fn = growthfd.residuals, x = age, y = height, model=model, control = minpack.lm::nls.lm.control(nprint=1), upper=rep(3,npar), lower=rep(-3,npar)))
 }
 
-growthfd.growthfd <- function(data, x, y, id, model, verbose=1) {
+#' Fit a FPCA Growth Curve Model to a population
+#'
+#' This function fits a model to the given measured data of a population.
+#'
+#' @param model FPCA growth model to be fitted
+#' @param data Data frame containing age, height and id of individuals
+#' @param x Age at measured data points
+#' @param y Height at measured data points
+#' @param id Corresponding individual's id at measured data points
+#' @param verbose Verbosity
+#' @return List containing individuals id and model scores
+#' @export
+growthfd <- function(data, x, y, id, model, verbose=1) {
+  mcall <- match.call()
+  x <- eval(mcall$x, data)
+  y <- eval(mcall$y, data)
+  id <- as.factor(eval(mcall$id, data))
+  ids <- levels(id)
   
+  scores <- matrix(NA, length(ids), sum(model$scores.elements))
+  
+  for(i in seq_along(ids)) {
+    fit <- growthfd.fit(model, x[id == ids[i]], y[id == ids[i]], verbose)
+    scores[i,] <- fit$par
+  }
+  
+  return(list('ids' = ids, 'scores' = scores))
 }
