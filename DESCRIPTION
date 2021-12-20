@@ -9,10 +9,10 @@ Encoding: UTF-8
 RoxygenNote: 7.1.2
 Imports:
     minpack.lm,
-    sitar
-Depends: 
-    R (>= 2.10),
+    sitar (>= 1.2.0),
     fda
+Depends: 
+    R (>= 2.10)
 LazyData: true
 Suggests: 
     rmarkdown,

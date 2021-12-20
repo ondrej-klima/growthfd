@@ -6,9 +6,9 @@
 #' @param par Phase and amplitude parameters
 #' @param model FPCA growth model 
 #' @return FDA function object
+#' @import fda
 #' @export
 growthfd.std <- function(par, model) {
-  library('fda')
   nwarpscores <- model$scores.elements[1];
   ngrowthscores <- model$scores.elements[2];
   
@@ -25,7 +25,7 @@ growthfd.std <- function(par, model) {
     warpfd <- warpfd + warpscores[i]*sqrt(model$warpfpca$values[i])*model$warpfpca$harmonics[i];
   }
   
-  return(register.newfd(growthfd, warpfd));
+  return(fda::register.newfd(growthfd, warpfd));
 }
 
 #' Compute residuals
