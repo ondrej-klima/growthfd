@@ -9,8 +9,9 @@ Encoding: UTF-8
 RoxygenNote: 7.1.2
 Imports:
     minpack.lm,
+    sitar
 Depends: 
-    R (>= 2.10)
+    R (>= 2.10),
     fda
 LazyData: true
 Suggests: 

@@ -38,7 +38,6 @@ growthfd.std <- function(par, model) {
 #' @param par Parameters of the model
 #' @param model FPCA growth model  
 #' @return A vector of residuals
-#' @export
 growthfd.residuals <- function(x, y, par, model) {
   p <- growthfd.evaluate(x, par, model);
   residuals <- c(p - y, par);
@@ -111,17 +110,65 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @export
 growthfd <- function(data, x, y, id, model, verbose=1) {
   mcall <- match.call()
-  x <- eval(mcall$x, data)
-  y <- eval(mcall$y, data)
+  x <- as.numeric(eval(mcall$x, data))
+  y <- as.numeric(eval(mcall$y, data))
   id <- as.factor(eval(mcall$id, data))
   ids <- levels(id)
+  n <- length(ids)
   
-  scores <- matrix(NA, length(ids), sum(model$scores.elements))
+  scores <- matrix(NA, n, sum(model$scores.elements))
+  milestones <- matrix(NA, n, 6)
+  colnames(milestones) <- c('apv', 'vpv', 'hpv', 'atf', 'vtf', 'htf')
+  m_x <- seq(7, 18, 0.05)
+  fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double())
+  
+  sampling <- seq(0, 18, 0.25)
+  m <- length(sampling)
+  stature <- matrix(NA, n, m)
+  velocity <- matrix(NA, n, m)
+  acceleration <- matrix(NA, n, m)
+  
   
   for(i in seq_along(ids)) {
-    fit <- growthfd.fit(model, x[id == ids[i]], y[id == ids[i]], verbose)
+    msk <- id == ids[i]
+    
+    if(verbose > 0) {
+      message(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
+    }
+    
+    fit <- growthfd.fit(model, x[msk], y[msk], verbose)
     scores[i,] <- fit$par
+    
+    # Computation of growth milestones
+    m_y <- growthfd.evaluate(m_x, fit$par, model, deriv=1)
+    xyi <- data.frame('x'=m_x, 'y'=m_y)
+    
+    peak.xyi <- sitar::getPeak(xyi)
+    milestones[i, 'apv'] <- peak.xyi[1]
+    milestones[i, 'vpv'] <- peak.xyi[2]
+    takeoff.xyi <- sitar::getTakeoff(xyi)
+    milestones[i, 'atf'] <- takeoff.xyi[1]
+    milestones[i, 'vtf'] <- takeoff.xyi[2]
+    
+    if(!is.na(milestones[i, 'apv'])) {
+      milestones[i, 'hpv'] <- growthfd.evaluate(milestones[i, 'apv'], fit$par, model)
+    }
+
+    if(!is.na(milestones[i, 'atf'])) {
+      milestones[i, 'htf'] <- growthfd.evaluate(milestones[i, 'atf'], fit$par, model)
+    }
+    
+    # Evaluation of fits and residuals
+    f <- growthfd.evaluate(x[msk], fit$par, model)
+    r <- f - y[msk]
+    fitted <- rbind(fitted, data.frame('id'=id[msk], 'fitted'=f, 'residuals'=r))
+    
+    # Evaluations of stature, velocity and acceleration
+    stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
+    velocity[i,] <- growthfd.evaluate(sampling, fit$par, model)
+    acceleration[i,] <- growthfd.evaluate(sampling, fit$par, model)
   }
   
-  return(list('ids' = ids, 'scores' = scores))
+  colnames(fitted) <- c('id', 'fitted', 'residuum')
+  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 'acceleration' = acceleration))
 }
