@@ -111,14 +111,19 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @export
 growthfd <- function(data, x, y, id, model, verbose=1) {
   mcall <- match.call()
-  x <- as.numeric(eval(mcall$x, data))
-  y <- as.numeric(eval(mcall$y, data))
-  id <- as.factor(eval(mcall$id, data))
+  x.na <- as.numeric(eval(mcall$x, data))
+  y.na <- as.numeric(eval(mcall$y, data))
+  id.na <- as.factor(eval(mcall$id, data))
     
-  msk <- !is.na(x) & !is.na(y)
-  x <- x[msk]
-  y <- y[msk]
-  id <- id[msk]
+  msk <- !is.na(x.na) & !is.na(y.na)
+  x <- x.na[msk]
+  y <- y.na[msk]
+  id <- id.na[msk]
+  
+  msk <- !is.na(x.na)
+  x.na <- x.na[msk]
+  y.na <- y.na[msk]
+  id.na <- id.na[msk]
 
   ids <- levels(id)
   n <- length(ids)
@@ -166,9 +171,11 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
     }
     
     # Evaluation of fits and residuals
-    f <- growthfd.evaluate(x[msk], fit$par, model)
-    r <- f - y[msk]
-    fitted <- rbind(fitted, data.frame('id'=id[msk], 'fitted'=f, 'residuals'=r))
+    msk.na <- id.na == ids[i]
+    
+    f <- growthfd.evaluate(x.na[msk.na], fit$par, model)
+    r <- f - y[msk.na]
+    fitted <- rbind(fitted, data.frame('id'=id[msk.na], 'fitted'=f, 'residuals'=r))
     
     # Evaluations of stature, velocity and acceleration
     stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
