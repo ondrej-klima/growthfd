@@ -114,6 +114,12 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
   x <- as.numeric(eval(mcall$x, data))
   y <- as.numeric(eval(mcall$y, data))
   id <- as.factor(eval(mcall$id, data))
+    
+  msk <- !is.na(x) & !is.na(y)
+  x <- x[msk]
+  y <- y[msk]
+  id <- id[msk]
+
   ids <- levels(id)
   n <- length(ids)
   
