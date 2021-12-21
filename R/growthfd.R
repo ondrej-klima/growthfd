@@ -174,8 +174,8 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
     msk.na <- id.na == ids[i]
     
     f <- growthfd.evaluate(x.na[msk.na], fit$par, model)
-    r <- f - y[msk.na]
-    fitted <- rbind(fitted, data.frame('id'=id[msk.na], 'fitted'=f, 'residuals'=r))
+    r <- f - y.na[msk.na]
+    fitted <- rbind(fitted, data.frame('id'=id.na[msk.na], 'fitted'=f, 'residuals'=r))
     
     # Evaluations of stature, velocity and acceleration
     stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
