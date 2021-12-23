@@ -186,3 +186,66 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
   colnames(fitted) <- c('id', 'fitted', 'residuum')
   return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 'acceleration' = acceleration))
 }
+
+
+#' Compute apv of model instance
+#'
+#' This function computes apv related to the certain instance of the model
+#' described by the given parameters.
+#'
+#' @param model FPCA growth model
+#' @param par Params of the model, corresponding to some individual
+#' @return Age of maximum growth velocity
+#' @export
+growthfd.apv <- function(model, par) {
+  x <- seq(7, 18, 0.05)
+  y <- growthfd.evaluate(x, par, model, deriv=1)
+  xyi <- data.frame(x, y)
+  
+  peak.xyi <- sitar::getPeak(xyi)
+  return(peak.xyi[1])
+}
+
+#' Plot a velocity curve registered at apv
+#'
+#' This function plots a velocity curve, registered at population (model) apv
+#' in comparison with the mean curve.
+#'
+#' @param model FPCA growth model
+#' @param par Params of the model, corresponding to the individual
+#' @example man/examples/plot.ApvRegVelocity.R
+#' @return Velocity at apv plot
+#' @export
+growthfd.plot.ApvRegVelocity <- function(model, par) {
+  meanPar <- rep(0, length(par))
+  pApv <- growthfd.apv(model, meanPar)
+  iApv <- growthfd.apv(model, par)
+  
+  message(sprintf('Population apv=%f, individual apv=%f', pApv, iApv))
+  
+  wbasisLM <- fda::create.bspline.basis(c(0,18), 4, 3, c(0, pApv, 18))
+  WfdLM <- fda::fd(matrix(0,4,1), wbasisLM)
+  WfdParLM <- fda::fdPar(WfdLM, 1, 1e-12)
+  
+  fd <- growthfd.std(par, model)
+  reg <- fda::landmarkreg(fd, iApv, pApv, WfdParLM, FALSE)
+  
+  x <- seq(0,18,0.05)
+  n <- length(x)
+  yi <- fda::eval.fd(x, fda::register.newfd(fd, reg$warpfd), 1)
+  ym <- growthfd.evaluate(x, meanPar, model, deriv=1)
+
+  data <- data.frame(id=rep('Mean', n), x=x-pApv, y=ym)
+  data <- rbind(data, data.frame(id=rep('Individual', n), x=x-pApv, y=yi))
+  
+  p <- ggplot2::ggplot(data=data, ggplot2::aes(x=x, y=mean, group=id, color=id)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=id)) +
+    ggplot2::xlim(-3, 3) + 
+    ggplot2::ylim(0, 13) +
+    ggplot2::xlab('Years before and after time of maximum velocity') +
+    ggplot2::ylab('Height velocity (cm/yr)') +
+    ggplot2::scale_color_brewer(palette="Paired") +
+    ggplot2::theme_minimal()
+  
+  return(p)
+}
