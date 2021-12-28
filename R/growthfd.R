@@ -11,8 +11,6 @@
 growthfd.std <- function(par, model) {
   nwarpscores <- model$scores.elements[1];
   ngrowthscores <- model$scores.elements[2];
-  
-  warpscores <- par[1:nwarpscores];
   growthscores <- par[(nwarpscores+1):length(par)];
   
   growthfd <- model$growthfpca$meanfd;
@@ -20,13 +18,23 @@ growthfd.std <- function(par, model) {
     growthfd <- growthfd + growthscores[i]*sqrt(model$growthfpca$values[i])*model$growthfpca$harmonics[i];
   }
   
+  return(fda::register.newfd(growthfd, growthfd.warpfd(par, model)));
+}
+
+
+#' @import fda
+growthfd.warpfd <- function(par, model) {
+  nwarpscores <- model$scores.elements[1];
+  warpscores <- par[1:nwarpscores];
+  
   warpfd <- model$warpfpca$meanfd;
   for(i in 1:nwarpscores) {
     warpfd <- warpfd + warpscores[i]*sqrt(model$warpfpca$values[i])*model$warpfpca$harmonics[i];
   }
   
-  return(fda::register.newfd(growthfd, warpfd));
+  return(warpfd)
 }
+
 
 #' Compute residuals
 #'
@@ -131,7 +139,6 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
   scores <- matrix(NA, n, sum(model$scores.elements))
   milestones <- matrix(NA, n, 6)
   colnames(milestones) <- c('apv', 'vpv', 'hpv', 'atf', 'vtf', 'htf')
-  m_x <- seq(7, 18, 0.05)
   fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double())
   
   sampling <- seq(0, 18, 0.25)
@@ -139,6 +146,14 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
   stature <- matrix(NA, n, m)
   velocity <- matrix(NA, n, m)
   acceleration <- matrix(NA, n, m)
+  
+  # Determine model apv and atf
+  m_x <- seq(7, 18, 0.05)
+  m_y <- growthfd.evaluate(m_x, rep(0, sum(model$scores.elements)), model, deriv=1)
+  xyi <- data.frame('x'=m_x, 'y'=m_y)
+  m_apv <- peak.xyi <- sitar::getPeak(xyi)[1]
+  m_atf <- sitar::getTakeoff(xyi)[1]
+  message(sprintf('Model apv=%f, atf=%f', m_apv, m_atf))
   
   
   for(i in seq_along(ids)) {
@@ -150,17 +165,36 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
     
     fit <- growthfd.fit(model, x[msk], y[msk], verbose)
     scores[i,] <- fit$par
+    warpfd <- growthfd.warpfd(-fit$par, model)
+    w_m <- fda::eval.fd(c(m_apv, m_atf), warpfd)
+    #w_apv <- 2*m_apv - w_m[1]
+    #w_atf <- 2*m_atf - w_m[2]
+    w_apv <- w_m[1]
+    w_atf <- w_m[2]
+    message(sprintf('Warped apv=%f, atf=%f', w_apv, w_atf))
     
     # Computation of growth milestones
-    m_y <- growthfd.evaluate(m_x, fit$par, model, deriv=1)
-    xyi <- data.frame('x'=m_x, 'y'=m_y)
+    # apv
+    m_x_apv <- seq(w_apv-2, w_apv+2, 0.05)
+    # m_x_apv <- seq(7, 18, 0.05)
+    m_y_apv <- growthfd.evaluate(m_x_apv, fit$par, model, deriv=1)
+    xyi_apv <- data.frame('x'=m_x_apv, 'y'=m_y_apv)
     
-    peak.xyi <- sitar::getPeak(xyi)
-    milestones[i, 'apv'] <- peak.xyi[1]
-    milestones[i, 'vpv'] <- peak.xyi[2]
+    peak.xyi_apv <- sitar::getPeak(xyi_apv)
+    milestones[i, 'apv'] <- peak.xyi_apv[1]
+    milestones[i, 'vpv'] <- peak.xyi_apv[2]
+    
+    # atf
+    m_x_atf <- seq(w_atf-2, w_apv+2, 0.05)
+    # m_x_atf <- seq(7, 18, 0.05)
+    m_y_atf <- growthfd.evaluate(m_x_atf, fit$par, model, deriv=1)
+    xyi <- data.frame('x'=m_x_atf, 'y'=m_y_atf)
+    
     takeoff.xyi <- sitar::getTakeoff(xyi)
     milestones[i, 'atf'] <- takeoff.xyi[1]
     milestones[i, 'vtf'] <- takeoff.xyi[2]
+    
+    message(sprintf('Refined apv=%f, atf=%f', milestones[i, 'apv'], milestones[i, 'atf']))
     
     if(!is.na(milestones[i, 'apv'])) {
       milestones[i, 'hpv'] <- growthfd.evaluate(milestones[i, 'apv'], fit$par, model)
@@ -179,12 +213,12 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
     
     # Evaluations of stature, velocity and acceleration
     stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
-    velocity[i,] <- growthfd.evaluate(sampling, fit$par, model)
-    acceleration[i,] <- growthfd.evaluate(sampling, fit$par, model)
+    velocity[i,] <- growthfd.evaluate(sampling, fit$par, model, 1)
+    acceleration[i,] <- growthfd.evaluate(sampling, fit$par, model, 2)
   }
   
   colnames(fitted) <- c('id', 'fitted', 'residuum')
-  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 'acceleration' = acceleration))
+  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 'acceleration' = acceleration, 'sampling' = sampling))
 }
 
 
