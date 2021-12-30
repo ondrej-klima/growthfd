@@ -170,6 +170,8 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   scores <- matrix(NA, n, sum(model$scores.elements))
   milestones <- matrix(NA, n, 6)
   colnames(milestones) <- c('apv', 'vpv', 'hpv', 'atf', 'vtf', 'htf')
+  w.m <- matrix(NA, n, 2)
+  colnames(w.m) <- c('apv', 'atf')
   fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double())
   
   sampling <- seq(0, 18, 0.25)
@@ -208,6 +210,8 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
     w_apv <- w_m[1]
     w_atf <- w_m[2]
     message(sprintf('Warped apv=%f, atf=%f', w_apv, w_atf))
+    w.m[i, 'apv'] <- w_apv
+    w.m[i, 'atf'] <- w_atf
     
     # Computation of growth milestones
     # apv
@@ -254,7 +258,9 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   }
   
   colnames(fitted) <- c('id', 'fitted', 'residuum')
-  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 'acceleration' = acceleration, 'sampling' = sampling))
+  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
+              'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
+              'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m))
 }
 
 
