@@ -35,6 +35,36 @@ growthfd.warpfd <- function(par, model) {
   return(warpfd)
 }
 
+#' @import fda
+growthfd.warpfdInv <- function(par, model) {
+  ages <- seq(0, 18, 0.05)
+  r <- eval.fd(ages, growthfd.warpfd(par, model))
+  rng <- c(0,18)
+  r[1] <- 0
+  r[r < 0] <- 0
+  r[r > 18] <- 17.999999999
+  r[length(r)] <- 18
+    
+  norder <- 6
+  nage <- length(r)
+  nbasis <- nage + norder - 2
+  wbasis <- create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=r)
+  
+  # starting values for coefficient
+  cvec0 <- matrix(0,nbasis,1)
+  Wfd0 <- fd(cvec0, wbasis)
+  # set up functional parameter object
+  Lfdobj <- 3 # penalize curvature of acceleration
+  #lambda <- 10^(-0.5) # smoothing parameter
+  lambda <- 5e-2 # smoothing parameter 1e-2 5e-2
+  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+  
+  wbasis <- create.bspline.basis(rangeval=c(0,18), nbasis=nbasis, norder=norder, breaks=ages)
+  Wfd0 <- fd(cvec0, wbasis)
+  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+  return(smooth.basis(ages, eval.fd(ages, smooth.basis(r, ages, growfdPar)$fd), growfdPar)$fd)
+}
+
 
 #' Compute residuals
 #'
@@ -114,10 +144,11 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @param y Height at measured data points
 #' @param id Corresponding individual's id at measured data points
 #' @param verbose Verbosity
+#' @param bounds Limitation of the interval for milestones estimation, 'negative' or 'inverse'
 #' @return List containing individuals id and model 
 #' @example man/examples/main.R
 #' @export
-growthfd <- function(data, x, y, id, model, verbose=1) {
+growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   mcall <- match.call()
   x.na <- as.numeric(eval(mcall$x, data))
   y.na <- as.numeric(eval(mcall$y, data))
@@ -165,7 +196,12 @@ growthfd <- function(data, x, y, id, model, verbose=1) {
     
     fit <- growthfd.fit(model, x[msk], y[msk], verbose)
     scores[i,] <- fit$par
-    warpfd <- growthfd.warpfd(-fit$par, model)
+    if(bounds == 'negative') {
+      warpfd <- growthfd.warpfd(-fit$par, model)
+    }
+    else {
+      warpfd <- growthfd.warpfdInv(fit$par, model)
+    }
     w_m <- fda::eval.fd(c(m_apv, m_atf), warpfd)
     #w_apv <- 2*m_apv - w_m[1]
     #w_atf <- 2*m_atf - w_m[2]
@@ -283,3 +319,4 @@ growthfd.plot.ApvRegVelocity <- function(model, par) {
   
   return(p)
 }
+
