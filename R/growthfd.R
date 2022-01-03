@@ -156,12 +156,12 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
   y.na <- as.numeric(eval(mcall$y, data))
   id.na <- as.factor(eval(mcall$id, data))
     
-  msk <- !is.na(x.na) & !is.na(y.na)
+  msk <- !is.na(x.na) & !is.na(y.na) & x.na <= 18 & x.na >= 0
   x <- x.na[msk]
   y <- y.na[msk]
   id <- id.na[msk]
   
-  msk <- !is.na(x.na)
+  msk <- !is.na(x.na) & x.na <= 18 & x.na >= 0
   x.na <- x.na[msk]
   y.na <- y.na[msk]
   id.na <- id.na[msk]
