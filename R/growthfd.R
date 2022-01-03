@@ -191,6 +191,11 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   
   for(i in seq_along(ids)) {
     msk <- id == ids[i]
+
+    if(length(x[msk]) == 0) {
+      #message('Skipping due to no data..')
+      next
+    }
     
     if(verbose > 0) {
       message(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
@@ -214,8 +219,15 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
     w.m[i, 'atf'] <- w_atf
     
     # Computation of growth milestones
+    bound <- 2
+    # Upper limit
+    upper <- w_apv + bound
+    if(upper > 18) {
+      upper <- 18
+    }
+    
     # apv
-    m_x_apv <- seq(w_apv-2, w_apv+2, 0.05)
+    m_x_apv <- seq(w_apv-bound, upper, 0.05)
     # m_x_apv <- seq(7, 18, 0.05)
     m_y_apv <- growthfd.evaluate(m_x_apv, fit$par, model, deriv=1)
     xyi_apv <- data.frame('x'=m_x_apv, 'y'=m_y_apv)
@@ -225,7 +237,7 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
     milestones[i, 'vpv'] <- peak.xyi_apv[2]
     
     # atf
-    m_x_atf <- seq(w_atf-2, w_apv+2, 0.05)
+    m_x_atf <- seq(w_atf-bound, upper, 0.05)
     # m_x_atf <- seq(7, 18, 0.05)
     m_y_atf <- growthfd.evaluate(m_x_atf, fit$par, model, deriv=1)
     xyi <- data.frame('x'=m_x_atf, 'y'=m_y_atf)
