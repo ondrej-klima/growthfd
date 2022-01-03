@@ -145,10 +145,12 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @param id Corresponding individual's id at measured data points
 #' @param verbose Verbosity
 #' @param bounds Limitation of the interval for milestones estimation, 'negative' or 'inverse'
+#' @param filename File name for saving results after each individual
+#' @param startFromId Start the evaluation from this id
 #' @return List containing individuals id and model 
 #' @example man/examples/main.R
 #' @export
-growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
+growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filename = '', startFromId = NULL) {
   mcall <- match.call()
   x.na <- as.numeric(eval(mcall$x, data))
   y.na <- as.numeric(eval(mcall$y, data))
@@ -164,7 +166,8 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   y.na <- y.na[msk]
   id.na <- id.na[msk]
 
-  ids <- levels(id)
+  #ids <- levels(id)
+  ids <- unique(id)
   n <- length(ids)
   
   scores <- matrix(NA, n, sum(model$scores.elements))
@@ -189,7 +192,10 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
   message(sprintf('Model apv=%f, atf=%f', m_apv, m_atf))
   
   
-  for(i in seq_along(ids)) {
+  fromId <- if(is.null(startFromId)) { 1 } else { match(startFromId, ids) }
+    
+  for(i in seq(fromId, length(ids))) {   
+  #for(i in seq_along(ids)) {
     msk <- id == ids[i]
 
     if(length(x[msk]) == 0) {
@@ -267,12 +273,21 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative') {
     stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
     velocity[i,] <- growthfd.evaluate(sampling, fit$par, model, 1)
     acceleration[i,] <- growthfd.evaluate(sampling, fit$par, model, 2)
+    
+    if(filename != '') {
+      growthfd.result <- list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
+                              'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
+                              'acceleration' = acceleration, 'sampling' = sampling, 
+                              'wm' = w.m, 'lastProcessedId' = ids[i])
+      save(growthfd.result, file = filename)
+    }
   }
   
   colnames(fitted) <- c('id', 'fitted', 'residuum')
   return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
               'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
-              'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m))
+              'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m,
+              'lastProcessedId' = ids[i]))
 }
 
 
