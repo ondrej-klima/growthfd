@@ -259,6 +259,7 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
       growthfd.result <- list('ids' = ids, 'scores' = scores, 'lastProcessedId' = ids[length(ids)])
       save(growthfd.result, file = filename)
     }
+    closeAllConnections()
   }
   fit_t <- proc.time() - start_t
   message('Fitting time:\n')
