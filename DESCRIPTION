@@ -11,7 +11,10 @@ Imports:
     minpack.lm,
     sitar (>= 1.2.0),
     fda,
-    ggplot2
+    ggplot2,
+    foreach,
+    doParallel,
+    flock
 Depends: 
     R (>= 2.10)
 LazyData: true

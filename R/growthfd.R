@@ -147,10 +147,15 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @param bounds Limitation of the interval for milestones estimation, 'negative' or 'inverse'
 #' @param filename File name for saving results after each individual
 #' @param startFromId Start the evaluation from this id
+#' @param parallel (Experimental) Parallel evaluation of the model fitting
+#' @param scores.filename File name for continuous saving of the scores
 #' @return List containing individuals id and model 
 #' @example man/examples/main.R
+#' @import foreach
+#' @import doParallel
+#' @import flock
 #' @export
-growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filename = '', startFromId = NULL) {
+growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filename = '', startFromId = NULL, parallel = F, scores.filename = 'parallel.txt') {
   mcall <- match.call()
   x.na <- as.numeric(eval(mcall$x, data))
   y.na <- as.numeric(eval(mcall$y, data))
@@ -191,29 +196,87 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
   m_atf <- sitar::getTakeoff(xyi)[1]
   message(sprintf('Model apv=%f, atf=%f', m_apv, m_atf))
   
+  fromId <- if(is.null(startFromId)) { 
+    1 
+  } 
+  else { 
+    match(startFromId, ids) 
+  }
   
-  fromId <- if(is.null(startFromId)) { 1 } else { match(startFromId, ids) }
-    
-  for(i in seq(fromId, length(ids))) {   
-  #for(i in seq_along(ids)) {
-    msk <- id == ids[i]
-
-    if(length(x[msk]) == 0) {
+  start_t <- proc.time()
+  if(!parallel) {
+    for(i in seq(fromId, length(ids))) {   
+      msk <- id == ids[i]
+  
+      if(!any(msk)) {
+        #message('Skipping due to no data..')
+        next
+      }
+      
+      if(verbose > 0) {
+        message(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
+      }
+      fit <- growthfd.fit(model, x[msk], y[msk], verbose)
+      scores[i,] <- fit$par
+      
+      if(filename != '') {
+        growthfd.result <- list('ids' = ids, 'scores' = scores, 'lastProcessedId' = ids[i])
+        save(growthfd.result, file = filename)
+      }
+    }
+  }
+  else {
+    if(scores.filename != '') {
+      cat('i,id,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12\n', file=scores.filename)
+    }
+    lock<-tempfile()
+    cores=detectCores()
+    cl<-makeCluster(cores-1)
+    registerDoParallel(cl)
+    scores <- foreach(i=seq(fromId, length(ids)), .combine=rbind, .packages=c('growthfd'), .verbose=T) %dopar% {
+      msk <- id == ids[i]
+      fit <- rep(NA, 12)
+      if(any(msk)) {
+        if(verbose > 0) {
+          sink(file=sprintf('%d.txt', Sys.getpid()), append = TRUE, type = c("output", "message"))
+          cat(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
+        }
+        fit <- growthfd.fit(model, x[msk], y[msk], verbose)$par
+        if(verbose > 0) {
+          if(scores.filename != '') {
+            cat('Writing resulting scores to file...\n')
+          }
+          sink()
+        }
+        if(scores.filename != '') {
+          locked <- flock::lock(lock)
+          write.table(t(c(i, ids[i], fit)), file=scores.filename, col.names = F, row.names = F, sep=",", append = TRUE)
+          flock::unlock(locked)
+        }
+      }
+      fit
+    }
+    stopCluster(cl)
+    if(filename != '') {
+      growthfd.result <- list('ids' = ids, 'scores' = scores, 'lastProcessedId' = ids[length(ids)])
+      save(growthfd.result, file = filename)
+    }
+  }
+  fit_t <- proc.time() - start_t
+  message('Fitting time:\n')
+  print(fit_t)
+  
+  for(i in seq(fromId, length(ids))) { 
+    if(!any(id == ids[i])) {
       #message('Skipping due to no data..')
       next
     }
     
-    if(verbose > 0) {
-      message(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
-    }
-    
-    fit <- growthfd.fit(model, x[msk], y[msk], verbose)
-    scores[i,] <- fit$par
     if(bounds == 'negative') {
-      warpfd <- growthfd.warpfd(-fit$par, model)
+      warpfd <- growthfd.warpfd(-scores[i,], model)
     }
     else {
-      warpfd <- growthfd.warpfdInv(fit$par, model)
+      warpfd <- growthfd.warpfdInv(scores[i,], model)
     }
     w_m <- fda::eval.fd(c(m_apv, m_atf), warpfd)
     #w_apv <- 2*m_apv - w_m[1]
@@ -235,7 +298,7 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
     # apv
     m_x_apv <- seq(w_apv-bound, upper, 0.05)
     # m_x_apv <- seq(7, 18, 0.05)
-    m_y_apv <- growthfd.evaluate(m_x_apv, fit$par, model, deriv=1)
+    m_y_apv <- growthfd.evaluate(m_x_apv, scores[i,], model, deriv=1)
     xyi_apv <- data.frame('x'=m_x_apv, 'y'=m_y_apv)
     
     peak.xyi_apv <- sitar::getPeak(xyi_apv)
@@ -245,7 +308,7 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
     # atf
     m_x_atf <- seq(w_atf-bound, upper, 0.05)
     # m_x_atf <- seq(7, 18, 0.05)
-    m_y_atf <- growthfd.evaluate(m_x_atf, fit$par, model, deriv=1)
+    m_y_atf <- growthfd.evaluate(m_x_atf, scores[i,], model, deriv=1)
     xyi <- data.frame('x'=m_x_atf, 'y'=m_y_atf)
     
     takeoff.xyi <- sitar::getTakeoff(xyi)
@@ -255,39 +318,42 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
     message(sprintf('Refined apv=%f, atf=%f', milestones[i, 'apv'], milestones[i, 'atf']))
     
     if(!is.na(milestones[i, 'apv'])) {
-      milestones[i, 'hpv'] <- growthfd.evaluate(milestones[i, 'apv'], fit$par, model)
+      milestones[i, 'hpv'] <- growthfd.evaluate(milestones[i, 'apv'], scores[i,], model)
     }
 
     if(!is.na(milestones[i, 'atf'])) {
-      milestones[i, 'htf'] <- growthfd.evaluate(milestones[i, 'atf'], fit$par, model)
+      milestones[i, 'htf'] <- growthfd.evaluate(milestones[i, 'atf'], scores[i,], model)
     }
     
     # Evaluation of fits and residuals
     msk.na <- id.na == ids[i]
     
-    f <- growthfd.evaluate(x.na[msk.na], fit$par, model)
+    f <- growthfd.evaluate(x.na[msk.na], scores[i,], model)
     r <- f - y.na[msk.na]
     fitted <- rbind(fitted, data.frame('id'=id.na[msk.na], 'fitted'=f, 'residuals'=r))
     
     # Evaluations of stature, velocity and acceleration
-    stature[i,] <- growthfd.evaluate(sampling, fit$par, model)
-    velocity[i,] <- growthfd.evaluate(sampling, fit$par, model, 1)
-    acceleration[i,] <- growthfd.evaluate(sampling, fit$par, model, 2)
-    
-    if(filename != '') {
-      growthfd.result <- list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
-                              'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
-                              'acceleration' = acceleration, 'sampling' = sampling, 
-                              'wm' = w.m, 'lastProcessedId' = ids[i])
-      save(growthfd.result, file = filename)
-    }
+    stature[i,] <- growthfd.evaluate(sampling, scores[i,], model)
+    velocity[i,] <- growthfd.evaluate(sampling, scores[i,], model, 1)
+    acceleration[i,] <- growthfd.evaluate(sampling, scores[i,], model, 2)
   }
   
+  total_t <- proc.time() - start_t
+  message('Total time:\n')
+  print(total_t)
+  
+  
   colnames(fitted) <- c('id', 'fitted', 'residuum')
-  return(list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
-              'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
-              'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m,
-              'lastProcessedId' = ids[i]))
+  growthfd.result <-list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
+       'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
+       'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m,
+       'lastProcessedId' = ids[i], 'time.fit' = fit_t, 'time.total' = total_t)
+  
+  if(filename != '') {
+    save(growthfd.result, file = filename)
+  }
+  
+  return(growthfd.result)
 }
 
 
