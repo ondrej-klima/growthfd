@@ -4,7 +4,19 @@
 \alias{growthfd}
 \title{Fit a FPCA Growth Curve Model to a population}
 \usage{
-growthfd(data, x, y, id, model, verbose = 1)
+growthfd(
+  data,
+  x,
+  y,
+  id,
+  model,
+  verbose = 1,
+  bounds = "negative",
+  filename = "",
+  startFromId = NULL,
+  parallel = F,
+  scores.filename = "parallel.txt"
+)
 }
 \arguments{
 \item{data}{Data frame containing age, height and id of individuals}
@@ -18,6 +30,16 @@ growthfd(data, x, y, id, model, verbose = 1)
 \item{model}{FPCA growth model to be fitted}
 
 \item{verbose}{Verbosity}
+
+\item{bounds}{Limitation of the interval for milestones estimation, 'negative' or 'inverse'}
+
+\item{filename}{File name for saving results after each individual}
+
+\item{startFromId}{Start the evaluation from this id}
+
+\item{parallel}{(Experimental) Parallel evaluation of the model fitting}
+
+\item{scores.filename}{File name for continuous saving of the scores}
 }
 \value{
 List containing individuals id and model
@@ -29,5 +51,6 @@ This function fits a model to the given measured data of a population.
 filename <- system.file("extdata", "data.csv", package="growthfd", mustWork=TRUE)
 csv <- read.csv(filename)
 d <- data.frame('id'=as.factor(csv[,'id']), 'x'=csv[,'age'], 'y'=csv[,'height'])
-growthfd(data=d, x=x, y=y, id=id, model=model.bgs.m)
+fit<-growthfd(data=d, x=x, y=y, id=id, model=model.bgs.m)
+
 }

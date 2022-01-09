@@ -151,9 +151,7 @@ growthfd.fit <- function(model, age, height, nprint=1) {
 #' @param scores.filename File name for continuous saving of the scores
 #' @return List containing individuals id and model 
 #' @example man/examples/main.R
-#' @import foreach
-#' @import doParallel
-#' @import flock
+#' @importFrom foreach %dopar%
 #' @export
 growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filename = '', startFromId = NULL, parallel = F, scores.filename = 'parallel.txt') {
   mcall <- match.call()
@@ -230,10 +228,10 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
       cat('i,id,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12\n', file=scores.filename)
     }
     lock<-tempfile()
-    cores=detectCores()
-    cl<-makeCluster(cores-1)
-    registerDoParallel(cl)
-    scores <- foreach(i=seq(fromId, length(ids)), .combine=rbind, .packages=c('growthfd'), .verbose=T) %dopar% {
+    cores=parallel::detectCores()
+    cl<-parallel::makeCluster(cores-1)
+    doParallel::registerDoParallel(cl)
+    scores <- foreach::foreach(i=seq(fromId, length(ids)), .combine=rbind, .packages=c('growthfd'), .verbose=T) %dopar% {
       msk <- id == ids[i]
       fit <- rep(NA, 12)
       if(any(msk)) {
@@ -256,7 +254,7 @@ growthfd <- function(data, x, y, id, model, verbose=1, bounds='negative', filena
       }
       fit
     }
-    stopCluster(cl)
+    parallel::stopCluster(cl)
     if(filename != '') {
       growthfd.result <- list('ids' = ids, 'scores' = scores, 'lastProcessedId' = ids[length(ids)])
       save(growthfd.result, file = filename)

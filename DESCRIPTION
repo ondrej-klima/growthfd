@@ -12,8 +12,9 @@ Imports:
     sitar (>= 1.2.0),
     fda,
     ggplot2,
-    foreach,
+    parallel,
     doParallel,
+    foreach,
     flock
 Depends: 
     R (>= 2.10)
