@@ -449,6 +449,7 @@ growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 100) {
   p <- ggplot2::ggplot(data=data, ggplot2::aes(x=x, y=y)) + 
     ggplot2::geom_boxplot() +
     ggplot2::geom_line(data=datai, ggplot2::aes(x=x, y=mean, group=1)) +
+    ggplot2::geom_point(data=datai, ggplot2::aes(x=x, y=mean, group=1), shape=8) +
     ggplot2::xlab('Years before and after time of maximum velocity') +
     ggplot2::ylab('Height velocity (cm/yr)') +
     ggplot2::scale_color_brewer(palette="Paired") + 
