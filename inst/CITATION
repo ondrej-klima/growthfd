@@ -1,0 +1,25 @@
+citHeader("To cite growthfd in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "Estimating Growth in Height from Limited Longitudinal Growth Data Using Full-Curves Training Dataset:A Comparison of Two Procedures of Curve Optimization-Functional Principal Component Analysis and SITAR",
+  author   = c(person("Miroslav", "Kralik"),
+               person("Ondrej", "Klima"),
+               person("Martin", "Cuta"),
+               person("Robert", "Malina"),
+               person("Slawomir", "Koziel"),
+               person("Lenka", "Polcerova"),
+               person("Anna", "Skultetyova"),
+               person("Michal", "Spanel"),
+               person("Lubomir", "Kukla"),
+               person("Pavel", "Zemcik")),
+  journal  = "Children",
+  year     = "2021",
+  volume   = 8,
+  number   = 10,
+  pages    = "934-955",
+  url      = "https://www.mdpi.com/2227-9067/8/10/934",
+  textVersion = paste(
+
+  )
+)
