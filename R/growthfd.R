@@ -418,6 +418,16 @@ growthfd.plot.ApvRegVelocity <- function(model, par) {
   return(p)
 }
 
+#' Plot velocity boxplots registered on apv
+#' 
+#' This function plots boxplots in time of measurements, after registration 
+#' of the individual on population apv.
+#' 
+#' @param model Model
+#' @param par Parameters of the model fitted to the measurements
+#' @param ages Ages of measurements points
+#' @param rndn Count of random curves to be evaluated
+#' @return GGPlot2 plot
 growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 100) {
   meanPar <- rep(0, length(par))
   pApv <- growthfd.apv(model, meanPar)
