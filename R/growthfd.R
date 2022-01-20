@@ -374,17 +374,18 @@ growthfd.apv <- function(model, par) {
   return(peak.xyi[1])
 }
 
-#' Plot a velocity curve registered at apv
-#'
-#' This function plots a velocity curve, registered at population (model) apv
-#' in comparison with the mean curve.
-#'
+#' Register a velocity curve at population apv
+#' 
+#' This function registers a curve corresponding to the supplied parameters 
+#' onto the population apv.
+#' 
 #' @param model FPCA growth model
 #' @param par Params of the model, corresponding to the individual
-#' @example man/examples/plot.ApvRegVelocity.R
-#' @return Velocity at apv plot
+#' @example man/examples/ApvRegVelocity.R
+#' @return Velocity at apv data frame
 #' @export
-growthfd.plot.ApvRegVelocity <- function(model, par) {
+#'   
+growthfd.ApvRegVelocity <- function(model, par) {
   meanPar <- rep(0, length(par))
   pApv <- growthfd.apv(model, meanPar)
   iApv <- growthfd.apv(model, par)
@@ -402,10 +403,21 @@ growthfd.plot.ApvRegVelocity <- function(model, par) {
   n <- length(x)
   yi <- fda::eval.fd(x, fda::register.newfd(fd, reg$warpfd), 1)
   ym <- growthfd.evaluate(x, meanPar, model, deriv=1)
-
+  
   data <- data.frame(id=rep('Mean', n), x=x-pApv, y=ym)
   data <- rbind(data, data.frame(id=rep('Individual', n), x=x-pApv, y=yi))
-  
+}
+
+#' Plot a velocity curve registered at apv
+#'
+#' This function plots a velocity curve, registered at population (model) apv
+#' in comparison with the mean curve.
+#'
+#' @param model Data obtained using growthfd.ApvRegVelocity
+#' @example man/examples/plot.ApvRegVelocity.R
+#' @return Velocity at apv plot
+#' @export
+growthfd.plot.ApvRegVelocity <- function(data) {
   p <- ggplot2::ggplot(data=data, ggplot2::aes(x=x, y=mean, group=id, color=id)) +
     ggplot2::geom_line(ggplot2::aes(linetype=id)) +
     ggplot2::xlim(-3, 3) + 
@@ -428,6 +440,7 @@ growthfd.plot.ApvRegVelocity <- function(model, par) {
 #' @param ages Ages of measurements points
 #' @param rndn Count of random curves to be evaluated
 #' @return GGPlot2 plot
+#' @export
 growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 100) {
   meanPar <- rep(0, length(par))
   pApv <- growthfd.apv(model, meanPar)

@@ -4,12 +4,10 @@
 \alias{growthfd.plot.ApvRegVelocity}
 \title{Plot a velocity curve registered at apv}
 \usage{
-growthfd.plot.ApvRegVelocity(model, par)
+growthfd.plot.ApvRegVelocity(data)
 }
 \arguments{
-\item{model}{FPCA growth model}
-
-\item{par}{Params of the model, corresponding to the individual}
+\item{model}{Data obtained using growthfd.ApvRegVelocity}
 }
 \value{
 Velocity at apv plot
@@ -24,7 +22,8 @@ csv <- read.csv(filename)
 d <- data.frame('id'=as.factor(csv[,'id']), 'x'=csv[,'age'], 'y'=csv[,'height'])
 m <- d$id == 'John'
 fit <- growthfd.fit(model.bgs.m, age=d$x[m], height=d$y[m])
-p<-growthfd.plot.ApvRegVelocity(model.bgs.m, fit$par)
+data<-growthfd.ApvRegVelocity(model.bgs.m, fit$par)
+p<-growthfd.plot.ApvRegVelocity(data)
 x11()
 p
 }
