@@ -8,6 +8,7 @@
 #' @param par Parameters of the model
 #' @param model FPCA growth model  
 #' @return A vector of residuals
+#' @export
 growthfd.residuals <- function(x, y, par, model) {
   p <- growthfd.evaluate(x, par, model);
   residuals <- c(p - y, par);
