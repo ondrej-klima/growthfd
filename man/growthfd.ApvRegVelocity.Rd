@@ -4,7 +4,7 @@
 \alias{growthfd.ApvRegVelocity}
 \title{Register a velocity curve at population apv}
 \usage{
-growthfd.ApvRegVelocity(model, par)
+growthfd.ApvRegVelocity(model, par, verbose = F)
 }
 \arguments{
 \item{model}{FPCA growth model}

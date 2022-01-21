@@ -385,19 +385,26 @@ growthfd.apv <- function(model, par) {
 #' @return Velocity at apv data frame
 #' @export
 #'   
-growthfd.ApvRegVelocity <- function(model, par) {
+growthfd.ApvRegVelocity <- function(model, par, verbose = F) {
   meanPar <- rep(0, length(par))
   pApv <- growthfd.apv(model, meanPar)
   iApv <- growthfd.apv(model, par)
   
-  message(sprintf('Population apv=%f, individual apv=%f', pApv, iApv))
+  if(verbose) {
+    message(sprintf('Population apv=%f, individual apv=%f', pApv, iApv))
+  }
   
   wbasisLM <- fda::create.bspline.basis(c(0,18), 4, 3, c(0, pApv, 18))
   WfdLM <- fda::fd(matrix(0,4,1), wbasisLM)
   WfdParLM <- fda::fdPar(WfdLM, 1, 1e-12)
   
   fd <- growthfd.std(par, model)
-  reg <- fda::landmarkreg(fd, iApv, pApv, WfdParLM, FALSE)
+  
+  if(verbose) {
+    reg <- fda::landmarkreg(fd, iApv, pApv, WfdParLM, FALSE)
+  } else {
+    invisible(capture.output(reg <- fda::landmarkreg(fd, iApv, pApv, WfdParLM, FALSE)))
+  }
   
   x <- seq(0,18,0.05)
   n <- length(x)
