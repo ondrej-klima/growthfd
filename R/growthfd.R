@@ -21,8 +21,15 @@ growthfd.std <- function(par, model) {
   return(fda::register.newfd(growthfd, growthfd.warpfd(par, model)));
 }
 
-
+#' Time warping function
+#' 
+#' This function returns the time warping function corresponding 
+#' to supplied model and particular parameters.
+#' 
+#' @param par Parameters of the model
+#' @param model FPCA growth model  
 #' @import fda
+#' @export
 growthfd.warpfd <- function(par, model) {
   nwarpscores <- model$scores.elements[1];
   warpscores <- par[1:nwarpscores];
@@ -35,7 +42,15 @@ growthfd.warpfd <- function(par, model) {
   return(warpfd)
 }
 
+#' Inverse time warping function
+#' 
+#' This function returns the *inverse* time warping function corresponding 
+#' to supplied model and particular parameters.
+#' 
+#' @param par Parameters of the model
+#' @param model FPCA growth model  
 #' @import fda
+#' @export
 growthfd.warpfdInv <- function(par, model) {
   ages <- seq(0, 18, 0.05)
   r <- eval.fd(ages, growthfd.warpfd(par, model))
