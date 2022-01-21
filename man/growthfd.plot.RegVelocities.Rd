@@ -4,16 +4,12 @@
 \alias{growthfd.plot.RegVelocities}
 \title{Plot velocity boxplots registered on apv}
 \usage{
-growthfd.plot.RegVelocities(model, par, ages, rndn = 0)
+growthfd.plot.RegVelocities(populationData, individualData)
 }
 \arguments{
-\item{model}{Model}
+\item{populationData}{Data frame for population box plots}
 
-\item{par}{Parameters of the model fitted to the measurements}
-
-\item{ages}{Ages of measurements points}
-
-\item{rndn}{Count of random curves to be evaluated}
+\item{individualData}{Data frame for the individual}
 }
 \value{
 GGPlot2 plot
@@ -28,7 +24,8 @@ csv <- read.csv(filename)
 d <- data.frame('id'=as.factor(csv[,'id']), 'x'=csv[,'age'], 'y'=csv[,'height'])
 m <- d$id == 'John'
 fit <- growthfd.fit(model.bgs.m, age=d$x[m], height=d$y[m])
-p<-growthfd.plot.RegVelocities(model.bgs.m, fit$par, d$x[m])
+b <- growthfd.RegVelocities(model.bgs.m, fit$par, d$x[m])
+p<- growthfd.plot.RegVelocities(b$population, b$individual)
 x11()
 p
 }

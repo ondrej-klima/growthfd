@@ -2,6 +2,7 @@
 
 export(growthfd)
 export(growthfd.ApvRegVelocity)
+export(growthfd.RegVelocities)
 export(growthfd.apv)
 export(growthfd.evaluate)
 export(growthfd.fit)

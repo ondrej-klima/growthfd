@@ -3,6 +3,7 @@ csv <- read.csv(filename)
 d <- data.frame('id'=as.factor(csv[,'id']), 'x'=csv[,'age'], 'y'=csv[,'height'])
 m <- d$id == 'John'
 fit <- growthfd.fit(model.bgs.m, age=d$x[m], height=d$y[m])
-p<-growthfd.plot.RegVelocities(model.bgs.m, fit$par, d$x[m])
+b <- growthfd.RegVelocities(model.bgs.m, fit$par, d$x[m])
+p<- growthfd.plot.RegVelocities(b$population, b$individual)
 x11()
 p
