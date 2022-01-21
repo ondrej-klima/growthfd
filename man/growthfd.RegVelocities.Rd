@@ -4,7 +4,7 @@
 \alias{growthfd.RegVelocities}
 \title{Prepare data for velocity boxplots registered on apv}
 \usage{
-growthfd.RegVelocities(model, par, ages, rndn = 0)
+growthfd.RegVelocities(model, par, ages, rndn = 0, verbose = F)
 }
 \arguments{
 \item{model}{Model}
