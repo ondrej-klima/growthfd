@@ -4,7 +4,7 @@
 \alias{growthfd.plot.RegVelocities}
 \title{Plot velocity boxplots registered on apv}
 \usage{
-growthfd.plot.RegVelocities(model, par, ages, rndn = 100)
+growthfd.plot.RegVelocities(model, par, ages, rndn = 0)
 }
 \arguments{
 \item{model}{Model}
@@ -21,4 +21,14 @@ GGPlot2 plot
 \description{
 This function plots boxplots in time of measurements, after registration 
 of the individual on population apv.
+}
+\examples{
+filename <- system.file("extdata", "data.csv", package="growthfd", mustWork=TRUE)
+csv <- read.csv(filename)
+d <- data.frame('id'=as.factor(csv[,'id']), 'x'=csv[,'age'], 'y'=csv[,'height'])
+m <- d$id == 'John'
+fit <- growthfd.fit(model.bgs.m, age=d$x[m], height=d$y[m])
+p<-growthfd.plot.RegVelocities(model.bgs.m, fit$par, d$x[m])
+x11()
+p
 }

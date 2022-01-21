@@ -8,8 +8,9 @@
 #' @param ages Ages of measurements points
 #' @param rndn Count of random curves to be evaluated
 #' @return GGPlot2 plot
+#' @example man/examples/plot.RegVelocities.R
 #' @export
-growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 100) {
+growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 0) {
   meanPar <- rep(0, length(par))
   pApv <- growthfd.apv(model, meanPar)
   iApv <- growthfd.apv(model, par)
@@ -25,14 +26,24 @@ growthfd.plot.RegVelocities <- function(model, par, ages, rndn = 100) {
   
   yi <- fda::eval.fd(ages, fda::register.newfd(fd, reg$warpfd), 1)
   
-  scores <- cbind(matrix(0,rndn,6), MASS::mvrnorm(rndn,rep(0,6),diag(6)))
-  y <- matrix(NA, rndn, length(ages))
-  for(i in seq(rndn)) {
-    message(sprintf('Evaluating random curve %d..', i))
+  if(rndn == 0) {
+    growthScores <- growthfd.modelPars(model)[,7:12]
+    n <- nrow(growthScores)
+    scores <- cbind(matrix(0,n,6), growthScores);
+    message(sprintf('Using %d individuals from the model.', n))
+  } else {
+    scores <- cbind(matrix(0,rndn,6), MASS::mvrnorm(rndn,rep(0,6),diag(6)));
+    message(sprintf('Using %d random individuals.', rndn))
+    n <- rndn;
+  }
+  
+  y <- matrix(NA, n, length(ages))
+  for(i in seq(n)) {
+    message(sprintf('Evaluating curve %d..', i))
     y[i,] <- growthfd.evaluate(ages, scores[i,], model, deriv = 1)
   }
   
-  data <- data.frame(x=as.factor(round(rep(ages, rndn)-pApv, digits=2)), y=c(t(y)))
+  data <- data.frame(x=as.factor(round(rep(ages, n)-pApv, digits=2)), y=c(t(y)))
   datai <- data.frame(x=as.factor(round(ages-pApv, digits=2)), y = yi)
   
   p <- ggplot2::ggplot(data=data, ggplot2::aes(x=x, y=y)) + 
