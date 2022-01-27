@@ -11,9 +11,14 @@
 #' @return Y-values of the evaluated curve
 #' @export
 growthfd.evaluate <- function(x, par, model, deriv=0) {
+  defaultW <- getOption("warn") 
+  options(warn = -1) 
+  
   nscores <- sum(model$scores.elements);
   scores <- par[1:sum(nscores)];
   
   growthfd <- growthfd.std(scores, model);
-  return(fda::eval.fd(x, growthfd, deriv));
+  r <- fda::eval.fd(x, growthfd, deriv)
+  options(warn = defaultW)
+  return(r);
 }
