@@ -10,7 +10,7 @@
 #' @return A vector of residuals
 #' @export
 growthfd.residuals <- function(x, y, par, model) {
-  p <- growthfd.evaluate(x, par, model);
+  suppressWarnings(p <- growthfd.evaluate(x, par, model));
   residuals <- c(p - y, par);
   return(residuals);
 }

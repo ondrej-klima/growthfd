@@ -9,9 +9,10 @@ Authors@R: c(
   )
 Author: Ondrej Klima [aut, cre], 
   Miroslav Kralik [aut]
-Maintainer: Ondrej Klima <iklima@fit.vutbr.cz>
+Maintainer: Ondřej Klíma <iklima@fit.vutbr.cz>
 Description: This package provides a method for fiting an FPCA-based growth curve model described in the paper stated bellow. This research was funded by Technology Agency of the Czech Republic (Technologická agentura České republiky), grant number TL01000394.
 Citation: Kralik M., Klima O., Cuta M., Malina R., Koziel S., Polcerova L., Skultetyova A., Spanel M., Kukla L., Zemcik P. Estimating Growth in Height from Limited Longitudinal Growth Data Using Full-Curves Training Dataset:A Comparison of Two Procedures of Curve Optimization-Functional Principal Component Analysis and SITAR. Children, 2021, vol. 8, n. 10., pages 934-955.
+URL: https://ondrej-klima.github.io/growthfd/, https://github.com/ondrej-klima/growthfd/
 License: LGPL (>= 3)
 Encoding: UTF-8
 RoxygenNote: 7.1.2

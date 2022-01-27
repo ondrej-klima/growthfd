@@ -10,8 +10,11 @@
 #' @example man/examples/fit.R
 #' @export
 growthfd.fit <- function(model, age, height, nprint=1) {
+  #defaultW <- getOption("warn") 
+  #options(warn = -1) 
+  
   npar <- sum(model$scores.elements);
-  r<-minpack.lm::nls.lm(
+  suppressWarnings(r<-minpack.lm::nls.lm(
     par=rep(0,npar), 
     fn = growthfd.residuals, 
     x = age, 
@@ -19,6 +22,7 @@ growthfd.fit <- function(model, age, height, nprint=1) {
     model=model, 
     control = minpack.lm::nls.lm.control(nprint=nprint), 
     upper=rep(3,npar), 
-    lower=rep(-3,npar))
+    lower=rep(-3,npar)))
+  #options(warn = defaultW)
   return(r)
 }
