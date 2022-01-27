@@ -15,4 +15,6 @@ install_github("ondrej-klima/growthfd")
 ```
 
 ## Acknowledgements
-![Programme Eta](./docs/images/Logo_EN_ETA.png "Programme Eta"){ width=50% height=50% }
+The software growthfd was developed with state budget funding provided 
+by the Technology Agency of the Czech Republic within the Eta Programme.
+<img src="./docs/images/logo_en_red.png" alt="tacr" width="100" height="100" />
