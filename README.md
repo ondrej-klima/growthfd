@@ -13,3 +13,6 @@ library("devtools")
 # Install growthfd from GitHub:
 install_github("ondrej-klima/growthfd")
 ```
+
+## Acknowledgements
+![Programme Eta](./docs/images/Logo_EN_ETA.png "Programme Eta")
