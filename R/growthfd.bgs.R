@@ -178,11 +178,17 @@ growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, l
 #' @return Matrix of evaluated points
 #' @export
 growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
-  return(if(deriv == 0) {
-    fda$beta[1,] + fda$beta[2,]*eval.monfd(age, fda$Wfdobj)
-  } else {
-    fda$beta[2,]*eval.monfd(age, fda$Wfdobj, deriv)
-  })
+  n <- length(age)
+  m <- dim(fda$beta)[2]
+  result <- matrix(NA, n, m)
+  for(i in seq(m)) {
+    if(deriv == 0) {
+      result[,i] <- fda$beta[1,i] + fda$beta[2,i]*eval.monfd(age, fda$Wfdobj[i])
+    } else {
+      result[,i] <- fda$beta[2,i]*eval.monfd(age, fda$Wfdobj[i], deriv)
+    }
+  }
+  return(result)
 }
 
 #' Evaluate general fda splines
