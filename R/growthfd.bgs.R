@@ -110,3 +110,29 @@ growthfd.bgs.interpolateNAs <- function(gatheredData) {
   }
   return(gatheredData)
 }
+
+#' Resample the data 
+#' 
+#' Resample the data without NA values to fine grid.
+#' 
+#' @param interpolatedData Data to be resampled.
+#' @return Resampled data
+growthfd.bgs.resample <- function(interpolatedData) {
+  result <- list()
+  ids <- unique(interpolatedData$id)
+  for(id in ids) {
+    rows <- interpolatedData$id == id
+    br <- zoo(interpolatedData$valuei[rows], interpolatedData$age[rows])
+    t <- time(br)
+    t.4iy <- seq(from = min(t), to=max(t),by=0.05)
+    dummy <- zoo(,t.4iy)
+    br.interpolated <- merge(br,dummy,all=TRUE)
+    br.spl <- na.spline(br.interpolated, method = "natural")
+    w.spl <- time(br.spl)
+    Tset.spl <- t.4iy 
+    brs.spl <- br.spl[w.spl %in% Tset.spl]
+    age <- as.vector(time(brs.spl))
+    result[[id]] <- cbind('id'=rep(id,length(age)),'age'=age,'value'=as.vector(brs.spl))
+  }
+  return(do.call(rbind, result))
+}
