@@ -4,7 +4,7 @@
 \alias{growthfd.bgs.gather}
 \title{Gather selected columns}
 \usage{
-growthfd.bgs.gather(data, prefix, age = NULL)
+growthfd.bgs.gather(data, prefix = "vysk", age = NULL)
 }
 \arguments{
 \item{data}{BGS data}

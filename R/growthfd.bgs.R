@@ -81,7 +81,7 @@ growthfd.bgs.measurementsAge <- function() {
 #' @param age Vector containing ages (optional)
 #' @return Gathered data
 #' @export
-growthfd.bgs.gather <- function(data, prefix, age=NULL) {
+growthfd.bgs.gather <- function(data, prefix='vysk', age=NULL) {
   if(is.null(age)) {
     age <- growthfd.bgs.measurementsAge()
   }
@@ -143,6 +143,7 @@ growthfd.bgs.resample <- function(interpolatedData) {
 #' 
 #' @param resampledData Data to be interpolated by monotone fda splines
 #' @return Object with fitted splines
+#' @example man/examples/train.R
 #' @export
 growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, lambda=5e-2) {
   age <- unique(resampled[,'age'])    
@@ -166,3 +167,35 @@ growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, l
     smooth.basis(age, values, growfdPar, wgt)
   })
 }
+
+#' Evaluate monotone fda splines
+#'
+#' This function evaluates the set of monotone splines.
+#'
+#' @param fda Fda object
+#' @param age Vector of ages to be evaluated
+#' @param deriv Derivative of the curve
+#' @return Matrix of evaluated points
+#' @export
+growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
+  return(if(deriv == 0) {
+    fda$beta[1,] + fda$beta[2,]*eval.monfd(agefine, fda$Wfdobj)
+  } else {
+    fda$beta[2,]*eval.monfd(agefine, fda$Wfdobj, deriv)
+  })
+}
+
+#' Evaluate general fda splines
+#'
+#' This function evaluates non monotone fda splines.
+#' 
+#' @param fda Fda object
+#' @param age Vector of ages to be evaluated
+#' @param deriv Derivative of the curve
+#' @return Matrix of evaluated points
+#' @export
+growthfd.bgs.eval <- function(fda, age, deriv=0) {
+  return(eval.fd(agefine, fda, deriv))
+}
+
+
