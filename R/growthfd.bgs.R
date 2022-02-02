@@ -136,3 +136,33 @@ growthfd.bgs.resample <- function(interpolatedData) {
   }
   return(do.call(rbind, result))
 }
+
+#' Fit the monotone spline
+#'
+#' This function fit the monotone splines to the data.
+#' 
+#' @param resampledData Data to be interpolated by monotone fda splines
+#' @return Object with fitted splines
+#' @export
+growthfd.bgs.smoothMonotone <- function(resampledData, monotone=T, norder=6, Lfdobj=3, lambda=5e-2) {
+  age <- unique(resampled[,'age'])    
+  values <- resampledData[,'value']
+  ncases <- length(unique(resampledData[,'id']))
+  dim(values) <- c(length(age), ncases)
+  
+  rng <- c(min(age),max(age))
+  
+  nage <- length(age)
+  nbasis <- nage + norder - 2
+  wbasis <- create.bspline.basis(rng, nbasis, norder, age)
+  cvec0 <- matrix(0,nbasis,ncases)
+  Wfd0 <- fd(cvec0, wbasis)
+  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+  wgt <- rep(1, nage)
+  
+  return(if(monotone) {
+    smooth.monotone(age, values, growfdPar, wgt, conv=0.1)
+  } else {
+    smooth.basis(age, values, growfdPar, wgt)
+  })
+}
