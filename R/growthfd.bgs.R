@@ -179,9 +179,9 @@ growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, l
 #' @export
 growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
   return(if(deriv == 0) {
-    fda$beta[1,] + fda$beta[2,]*eval.monfd(agefine, fda$Wfdobj)
+    fda$beta[1,] + fda$beta[2,]*eval.monfd(age, fda$Wfdobj)
   } else {
-    fda$beta[2,]*eval.monfd(agefine, fda$Wfdobj, deriv)
+    fda$beta[2,]*eval.monfd(age, fda$Wfdobj, deriv)
   })
 }
 
@@ -195,7 +195,26 @@ growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
 #' @return Matrix of evaluated points
 #' @export
 growthfd.bgs.eval <- function(fda, age, deriv=0) {
-  return(eval.fd(agefine, fda, deriv))
+  return(eval.fd(age, fda, deriv))
 }
 
+#' Find apvs on growth curves
+#' 
+#' This function finds ages of maximal growth velocity on the velocity curves.
+#' 
+#' @param age Vector of ages
+#' @param velocity Matrix of velocity curves
+#' @param ids Vector of individuals' ids
+#' @param limits List of limits
+#' @return Vector of apv values
+#' @export
+growthfd.bgs.apvs <- function(age, velocity, ids, limits) {
+  n <- dim(velocity)[2]
+  result <- rep(NA, n)
+  for(col in seq(n)) {
+    xyi <- data.frame(x=age, y=velocity[,col])
+    result[col] <- sitar::getPeak(xyi)[1]
+  }
+  return(result)
+}
 
