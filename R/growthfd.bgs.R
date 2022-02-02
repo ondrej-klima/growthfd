@@ -91,3 +91,22 @@ growthfd.bgs.gather <- function(data, prefix, age=NULL) {
   s$age <- rep(age, dim(data)[1])
   return(s)
 }
+
+#' Estimate NA values
+#' 
+#' Interpolates missing values using spline method. Interpolates data 
+#' from the 'value' column and join them as the 'valuei' column.
+#'
+#' @param gatheredData Data in gathered form
+#' @return Interpolated data
+#' @export
+growthfd.bgs.interpolateNAs <- function(gatheredData) {
+  ids <- unique(gatheredData$id)
+  gatheredData$valuei <- rep(NA, length(gatheredData$value))
+  for(id in ids) {
+    rows <- gatheredData$id == id
+    value <- gatheredData$value[rows]
+    gatheredData$valuei[rows] <- na_interpolation(value, option = "stine")
+  }
+  return(gatheredData)
+}
