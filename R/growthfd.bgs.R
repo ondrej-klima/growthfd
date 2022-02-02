@@ -144,7 +144,7 @@ growthfd.bgs.resample <- function(interpolatedData) {
 #' @param resampledData Data to be interpolated by monotone fda splines
 #' @return Object with fitted splines
 #' @export
-growthfd.bgs.smoothMonotone <- function(resampledData, monotone=T, norder=6, Lfdobj=3, lambda=5e-2) {
+growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, lambda=5e-2) {
   age <- unique(resampled[,'age'])    
   values <- resampledData[,'value']
   ncases <- length(unique(resampledData[,'id']))
