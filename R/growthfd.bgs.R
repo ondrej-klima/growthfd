@@ -224,7 +224,7 @@ growthfd.bgs.apvs <- function(age, velocity) {
   return(result)
 }
 
-#' Plot all curves to pdf
+#' Plot all individual curves to pdf
 #' 
 #' Plots value, velocity and acceleration curves together with apvs
 #' and measured data points into separate figure for each individual. All plots
@@ -239,7 +239,7 @@ growthfd.bgs.apvs <- function(age, velocity) {
 #' @param data Matrix with original data points
 #' @param filename File name of the output pdf
 #' @export
-growthfd.bgs.plotFda <- function(age, ids, apvs, values, vel, acc, data, filename="plots.pdf") {
+growthfd.bgs.plotIndividuals <- function(age, ids, apvs, values, vel, acc, data, filename="plots.pdf") {
   n <- length(ids)
   pdf(filename)
   for(i in seq(n)) {
@@ -258,3 +258,27 @@ growthfd.bgs.plotFda <- function(age, ids, apvs, values, vel, acc, data, filenam
   dev.off()
 }
 
+#' Plot curves in one figure
+#' 
+#' Plots all curves from given matrix into a single figure.
+#' 
+#' @param age Vector of ages
+#' @param values Matrix containing curves as columns
+#' @param xlimit Limits for the x axis
+#' @param ylimit Limits for the y axis
+#' @return GGPlot2 plot
+#' @export
+growthfd.bgs.plotAll <- function(age, values, xlimit=NULL, ylimit=NULL) {
+  d <- dim(values)
+  dim(values) <- c(prod(dim(values)), 1)
+  df <- data.frame(age=rep(age, d[2]), values=values, i=factor(rep(seq(d[2]), each=d[1])))
+  result <- ggplot2::ggplot(data = df) + 
+    ggplot2::geom_line(aes(x=age,y=values,group=i,colour=i),show.legend = FALSE)
+  if(!is.null(xlimit)) {
+    result <- result + ggplot2::xlim(xlimit)
+  }
+  if(!is.null(ylimit)) {
+    result <- result + ggplot2::ylim(ylimit)
+  }
+  return(result)
+}

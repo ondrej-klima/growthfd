@@ -38,5 +38,6 @@ ids <- unique(data$id)
 values <- growthfd.bgs.evalMonotone(smoothed,age)
 vel <- growthfd.bgs.evalMonotone(smoothed,age,1)
 acc <- growthfd.bgs.evalMonotone(smoothed,age,2)
-growthfd.bgs.plotFda(age, ids, apvs, values, vel, acc, gather)
+growthfd.bgs.plotIndividuals(age, ids, apvs, values, vel, acc, gather)
+growthfd.bgs.plotAll(age,acc, ylimit = c(-25, 25))
 }
