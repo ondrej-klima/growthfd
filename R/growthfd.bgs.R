@@ -155,16 +155,16 @@ growthfd.bgs.smooth <- function(resampledData, monotone=T, norder=6, Lfdobj=3, l
   
   nage <- length(age)
   nbasis <- nage + norder - 2
-  wbasis <- create.bspline.basis(rng, nbasis, norder, age)
+  wbasis <- fda::create.bspline.basis(rng, nbasis, norder, age)
   cvec0 <- matrix(0,nbasis,ncases)
-  Wfd0 <- fd(cvec0, wbasis)
-  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+  Wfd0 <- fda::fd(cvec0, wbasis)
+  growfdPar <- fda::fdPar(Wfd0, Lfdobj, lambda)
   wgt <- rep(1, nage)
   
   return(if(monotone) {
-    smooth.monotone(age, values, growfdPar, wgt, conv=0.1)
+    fda::smooth.monotone(age, values, growfdPar, wgt, conv=0.1)
   } else {
-    smooth.basis(age, values, growfdPar, wgt)
+    fda::smooth.basis(age, values, growfdPar, wgt)
   })
 }
 
@@ -183,9 +183,9 @@ growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
   result <- matrix(NA, n, m)
   for(i in seq(m)) {
     if(deriv == 0) {
-      result[,i] <- fda$beta[1,i] + fda$beta[2,i]*eval.monfd(age, fda$Wfdobj[i])
+      result[,i] <- fda$beta[1,i] + fda$beta[2,i]*fda::eval.monfd(age, fda$Wfdobj[i])
     } else {
-      result[,i] <- fda$beta[2,i]*eval.monfd(age, fda$Wfdobj[i], deriv)
+      result[,i] <- fda$beta[2,i]*fda::eval.monfd(age, fda$Wfdobj[i], deriv)
     }
   }
   return(result)
@@ -201,7 +201,7 @@ growthfd.bgs.evalMonotone <- function(fda, age, deriv=0) {
 #' @return Matrix of evaluated points
 #' @export
 growthfd.bgs.eval <- function(fda, age, deriv=0) {
-  return(eval.fd(age, fda, deriv))
+  return(fda::eval.fd(age, fda, deriv))
 }
 
 #' Find apvs on growth curves
@@ -214,7 +214,7 @@ growthfd.bgs.eval <- function(fda, age, deriv=0) {
 #' @param limits List of limits
 #' @return Vector of apv values
 #' @export
-growthfd.bgs.apvs <- function(age, velocity, ids, limits) {
+growthfd.bgs.apvs <- function(age, velocity) {
   n <- dim(velocity)[2]
   result <- rep(NA, n)
   for(col in seq(n)) {
@@ -222,5 +222,39 @@ growthfd.bgs.apvs <- function(age, velocity, ids, limits) {
     result[col] <- sitar::getPeak(xyi)[1]
   }
   return(result)
+}
+
+#' Plot all curves to pdf
+#' 
+#' Plots value, velocity and acceleration curves together with apvs
+#' and measured data points into separate figure for each individual. All plots
+#' are stored into a single pdf file, one figure per page.
+#' 
+#' @param age Vector of ages
+#' @param ids Vector containing ids
+#' @param apvs Vector containing apv for each individual
+#' @param values Matrix with value curves
+#' @param vel Matrix with velocity curves
+#' @param values Matrix with acceleration curves
+#' @param data Matrix with original data points
+#' @param filename File name of the output pdf
+#' @export
+growthfd.bgs.plotFda <- function(age, ids, apvs, values, vel, acc, data, filename="plots.pdf") {
+  n <- length(ids)
+  pdf(filename)
+  for(i in seq(n)) {
+    df <- data.frame('age'=age, 'v'=values[,i], 'vel'=vel[,i], 'acc'=acc[,i])
+    rows <- data$id == ids[i]
+    dfPts <- data.frame('age' = data$age[rows], 'v' = data$value[rows])
+    p <- ggplot2::ggplot(data = df) +
+      ggplot2::geom_line(aes(x=age,y=v)) +
+      ggplot2::geom_line(aes(x=age,y=acc)) +      
+      ggplot2::geom_line(aes(x=age,y=vel)) +
+      ggplot2::geom_vline(xintercept = apvs[i]) + 
+      ggplot2::geom_point(data=dfPts, aes(x=age, y=v)) +
+      ggplot2::ggtitle(ids[i])
+    print(p)
+  }
+  dev.off()
 }
 
