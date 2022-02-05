@@ -19,7 +19,7 @@ RoxygenNote: 7.1.2
 Imports:
     minpack.lm,
     sitar (>= 1.2.0),
-    fda (== 2.3.4),
+    fda (== 2.4.8.1),
     ggplot2,
     parallel,
     doParallel,

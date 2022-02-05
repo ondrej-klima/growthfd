@@ -380,3 +380,28 @@ growthfd.bgs.model <- function(amplitude, itw, nharm=6) {
   )
   return(model)
 }
+
+#' Plot eigenwarps and eigenamplitudes of the model
+#' 
+#' Plots the effects of individual parameters on the curve shape.
+#'
+#' @param model FPCA growth model
+#' @param deriv Derivation of the growth curve
+#' @param ylim Limits the scale of y axis 
+#' @export
+growthfd.plotwarps <-function(model, deriv=0, ylim=NULL) {
+  windows(width=7,height=12,rescale=c("fixed"))
+  nwarpscores = model$scores.elements[1];
+  nparams = sum(model$scores.elements) + 2;
+  age = seq(0,18,.05)
+  par(mfrow=c(ceiling(.25*nparams),3))
+  for(i in 1:sum(model$scores.elements)) {
+    params <- rep(0, nparams);
+    plot(x=age, y=growthfd.evaluate(age, params, model, deriv), ylim=ylim, cex=0.3,pch=19, col="black");
+    params[i] = 3;
+    points(x=age, y=growthfd.evaluate(age, params, model, deriv), ylim=ylim, cex=0.3,pch=19, col="red");
+    params[i] = -3;
+    points(x=age, y=growthfd.evaluate(age, params, model, deriv), ylim=ylim, cex=0.3,pch=19, col="blue");
+  }
+}
+
