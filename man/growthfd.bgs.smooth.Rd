@@ -30,7 +30,7 @@ resampled <- growthfd.bgs.resample(interp)
 smoothed <- growthfd.bgs.smooth(resampled)
 
 age <- seq(10, 18, 0.05)
-m<-growthfd.bgs.evalMonotone(smoothed,age)
+m<-growthfd.bgs.evalMonotone(smoothed,age,1)
 apvs<-growthfd.bgs.apvs(age,m)
 
 age <- seq(0, 18, 0.05)
@@ -60,4 +60,10 @@ acc3 <- growthfd.bgs.eval(smoothed3$fd,age,2)
 growthfd.bgs.plotIndividuals(age, ids, apvs, values3, vel3, acc3, gather, filename = "plots3.pdf")
 
 tw <- growthfd.bgs.registerCurvesToApvs(smoothed, apvs)
+reged<-fda::register.newfd(smoothed$yhatfd, tw)
+fda::register.newfd(accelfdUN, regListLM$warpfd)
+
+reged.bak<-fda::register.newfd(smoothed$yhatfd, tw)
+tw.bak <- tw
+
 }

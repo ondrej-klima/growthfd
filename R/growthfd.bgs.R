@@ -307,8 +307,7 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   
   regListLM = fda::landmarkreg(accelfdUN, PGSctr, PGSctrmean, WfdParLM, TRUE)
   
-  #accelfdLM = regListLM$regfd
-  accelfdLM <- fda::register.newfd(accelfdUN, regListLM$warpfd)
+  accelfdLM = regListLM$regfd
   accelmeanfdLM = fda::mean.fd(accelfdLM)
   warpfdLM = regListLM$warpfd
   WfdLM = regListLM$Wfd
@@ -318,8 +317,45 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   WfdParCR = fda::fdPar(Wfd0CR, 1, 1)
   regList = fda::register.fd(accelmeanfdLM,accelfdLM, WfdParCR)
   warpfdCR = regList$warpfd
-  #accelfdCR = regList$regfd
-  #WfdCR = regList$Wfd
   
   return(fda::register.newfd(warpfdLM, warpfdCR))
+}
+
+#' Compute inverse time-warping functions
+#' 
+#' Computes inverse for given functions.
+#' 
+#' @param age Vector of ages
+#' @param tw Fda object containing the time-warping functions
+#' @return Fda object containing the inverse functions
+#' @import splines 
+#' @export 
+growthfd.bgs.invertTw <- function(age, tw) {
+  values=eval.fd(age, tw)
+  
+  values[1,] = 0
+  values[361,] = 18
+  rng <-c(0,18)
+  
+  nage <- dim(values)[1]
+  ncases <- dim(values)[2]
+  norder <- 6
+  nbasis <- nage + norder - 2
+  Lfdobj <- 3 
+  lambda <- 5e-2
+  
+  d <- matrix(nrow = nage, ncol = ncases)
+  for(i in 1:ncases) {
+    wbasis <- create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=values[,i])
+    cvec0 <- matrix(0,nbasis,1)
+    Wfd0 <- fd(cvec0, wbasis)
+    growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+    
+    d[,i] <- eval.fd(age, smooth.basis(values[,i], age, growfdPar)$fd)
+  }
+
+  wbasis <- create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=age)
+  Wfd0 <- fd(cvec0, wbasis)
+  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+  return(smooth.basis(age, d, growfdPar))
 }
