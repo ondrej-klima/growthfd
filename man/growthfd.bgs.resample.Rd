@@ -13,5 +13,5 @@ growthfd.bgs.resample(interpolatedData)
 Resampled data
 }
 \description{
-Resample the data without NA values to fine grid.
+Resamples the data without NA values to fine grid.
 }

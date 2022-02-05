@@ -80,13 +80,14 @@ growthfd.bgs.measurementsAge <- function() {
 #' @param prefix Columns prefix
 #' @param age Vector containing ages (optional)
 #' @return Gathered data
+#' @importFrom dplyr %>%
 #' @export
 growthfd.bgs.gather <- function(data, prefix='vysk', age=NULL) {
   if(is.null(age)) {
     age <- growthfd.bgs.measurementsAge()
   }
   n <- sprintf('%s%.2d%.2d', rep(prefix, length(age)), floor(age), (age%%1)*1e2)
-  s <- subset(data, select=c('id', 'sex', n)) %>% gather(agecat, value, n)
+  s <- subset(data, select=c('id', 'sex', n)) %>% tidyr::gather(agecat, value, n)
   s <- s[order(s$id),]
   s$age <- rep(age, dim(data)[1])
   return(s)
@@ -106,14 +107,14 @@ growthfd.bgs.interpolateNAs <- function(gatheredData) {
   for(id in ids) {
     rows <- gatheredData$id == id
     value <- gatheredData$value[rows]
-    gatheredData$valuei[rows] <- na_interpolation(value, option = "stine")
+    gatheredData$valuei[rows] <- imputeTS::na_interpolation(value, option = "stine")
   }
   return(gatheredData)
 }
 
 #' Resample the data 
 #' 
-#' Resample the data without NA values to fine grid.
+#' Resamples the data without NA values to fine grid.
 #' 
 #' @param interpolatedData Data to be resampled.
 #' @return Resampled data
@@ -122,12 +123,12 @@ growthfd.bgs.resample <- function(interpolatedData) {
   ids <- unique(interpolatedData$id)
   for(id in ids) {
     rows <- interpolatedData$id == id
-    br <- zoo(interpolatedData$valuei[rows], interpolatedData$age[rows])
+    br <- zoo::zoo(interpolatedData$valuei[rows], interpolatedData$age[rows])
     t <- time(br)
     t.4iy <- seq(from = min(t), to=max(t),by=0.05)
-    dummy <- zoo(,t.4iy)
+    dummy <- zoo::zoo(,t.4iy)
     br.interpolated <- merge(br,dummy,all=TRUE)
-    br.spl <- na.spline(br.interpolated, method = "natural")
+    br.spl <- zoo::na.spline(br.interpolated, method = "natural")
     w.spl <- time(br.spl)
     Tset.spl <- t.4iy 
     brs.spl <- br.spl[w.spl %in% Tset.spl]
@@ -247,11 +248,11 @@ growthfd.bgs.plotIndividuals <- function(age, ids, apvs, values, vel, acc, data,
     rows <- data$id == ids[i]
     dfPts <- data.frame('age' = data$age[rows], 'v' = data$value[rows])
     p <- ggplot2::ggplot(data = df) +
-      ggplot2::geom_line(aes(x=age,y=v)) +
-      ggplot2::geom_line(aes(x=age,y=acc)) +      
-      ggplot2::geom_line(aes(x=age,y=vel)) +
+      ggplot2::geom_line(ggplot2::aes(x=age,y=v)) +
+      ggplot2::geom_line(ggplot2::aes(x=age,y=acc)) +      
+      ggplot2::geom_line(ggplot2::aes(x=age,y=vel)) +
       ggplot2::geom_vline(xintercept = apvs[i]) + 
-      ggplot2::geom_point(data=dfPts, aes(x=age, y=v)) +
+      ggplot2::geom_point(data=dfPts, ggplot2::aes(x=age, y=v)) +
       ggplot2::ggtitle(ids[i])
     print(p)
   }
@@ -273,7 +274,7 @@ growthfd.bgs.plotAll <- function(age, values, xlimit=NULL, ylimit=NULL) {
   dim(values) <- c(prod(dim(values)), 1)
   df <- data.frame(age=rep(age, d[2]), values=values, i=factor(rep(seq(d[2]), each=d[1])))
   result <- ggplot2::ggplot(data = df) + 
-    ggplot2::geom_line(aes(x=age,y=values,group=i,colour=i),show.legend = FALSE)
+    ggplot2::geom_line(ggplot2::aes(x=age,y=values,group=i,colour=i),show.legend = FALSE)
   if(!is.null(xlimit)) {
     result <- result + ggplot2::xlim(xlimit)
   }
@@ -281,4 +282,44 @@ growthfd.bgs.plotAll <- function(age, values, xlimit=NULL, ylimit=NULL) {
     result <- result + ggplot2::ylim(ylimit)
   }
   return(result)
+}
+
+#' Register curves to the apvs
+#' 
+#' Calculates the time warping functions with respect to the supplied apvs 
+#' and the growth curves for the final refinement.
+#'
+#' @param fdaObject Fda object contaning the curves
+#' @param apvs Vector containing the respective apvs
+#' @return FDA object containing the time warping functions
+#' @export
+growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
+  hgtfhatfd = fdaObject$yhatfd;
+  accelfdUN = fda::deriv.fd(hgtfhatfd, 2)
+  accelmeanfdUN = fda::mean.fd(accelfdUN)
+  PGSctr=apvs
+  PGSctrmean = mean(PGSctr)
+  ncases <- length(apvs)
+  
+  wbasisLM = fda::create.bspline.basis(c(0,18), 4, 3, c(0,PGSctrmean,18))
+  WfdLM = fda::fd(matrix(0,4,1),wbasisLM)
+  WfdParLM = fda::fdPar(WfdLM,1,1e-12)
+  
+  regListLM = fda::landmarkreg(accelfdUN, PGSctr, PGSctrmean, WfdParLM, TRUE)
+  
+  #accelfdLM = regListLM$regfd
+  accelfdLM <- fda::register.newfd(accelfdUN, regListLM$warpfd)
+  accelmeanfdLM = fda::mean.fd(accelfdLM)
+  warpfdLM = regListLM$warpfd
+  WfdLM = regListLM$Wfd
+  
+  wbasisCR = fda::create.bspline.basis(c(0,18), 15, 5)
+  Wfd0CR = fda::fd(matrix(0,15,ncases),wbasisCR)
+  WfdParCR = fda::fdPar(Wfd0CR, 1, 1)
+  regList = fda::register.fd(accelmeanfdLM,accelfdLM, WfdParCR)
+  warpfdCR = regList$warpfd
+  #accelfdCR = regList$regfd
+  #WfdCR = regList$Wfd
+  
+  return(fda::register.newfd(warpfdLM, warpfdCR))
 }
