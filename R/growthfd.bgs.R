@@ -331,7 +331,7 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
 #' @import splines 
 #' @export 
 growthfd.bgs.invertTw <- function(age, tw) {
-  values=eval.fd(age, tw)
+  values=fda::eval.fd(age, tw)
   
   values[1,] = 0
   values[361,] = 18
@@ -346,16 +346,37 @@ growthfd.bgs.invertTw <- function(age, tw) {
   
   d <- matrix(nrow = nage, ncol = ncases)
   for(i in 1:ncases) {
-    wbasis <- create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=values[,i])
+    wbasis <- fda::create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=values[,i])
     cvec0 <- matrix(0,nbasis,1)
-    Wfd0 <- fd(cvec0, wbasis)
-    growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
+    Wfd0 <- fda::fd(cvec0, wbasis)
+    growfdPar <- fda::fdPar(Wfd0, Lfdobj, lambda)
     
-    d[,i] <- eval.fd(age, smooth.basis(values[,i], age, growfdPar)$fd)
+    d[,i] <- fda::eval.fd(age, smooth.basis(values[,i], age, growfdPar)$fd)
   }
 
-  wbasis <- create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=age)
-  Wfd0 <- fd(cvec0, wbasis)
-  growfdPar <- fdPar(Wfd0, Lfdobj, lambda)
-  return(smooth.basis(age, d, growfdPar))
+  wbasis <- fda::create.bspline.basis(rangeval=rng, nbasis=nbasis, norder=norder, breaks=age)
+  Wfd0 <- fda::fd(cvec0, wbasis)
+  growfdPar <- fda::fdPar(Wfd0, Lfdobj, lambda)
+  return(fda::smooth.basis(age, d, growfdPar))
+}
+
+#' Create FPCA growth model
+#'
+#' Creates FPCA growth model from fda objects of growth functions registered
+#' on apv and inverse time warping functions.
+#'
+#' @param ampitude Fda object of registered growth functions
+#' @param itw Fda object of inverse time warping functions
+#' @param nharm Number of harmonic functions for each fpca
+#' @return FPCA growth model
+#' @export
+growthfd.bgs.model <- function(amplitude, itw, nharm=6) {
+  model<-list();
+  model$growthfpca <- fda::pca.fd(amplitude,nharm=nharm);
+  model$warpfpca <- fda::pca.fd(itw, nharm=nharm);
+  model$scores.elements <- c(
+    dim(model$warpfpca$scores)[2], 
+    dim(model$growthfpca$scores)[2]
+  )
+  return(model)
 }

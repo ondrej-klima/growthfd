@@ -66,4 +66,8 @@ fda::register.newfd(accelfdUN, regListLM$warpfd)
 reged.bak<-fda::register.newfd(smoothed$yhatfd, tw)
 tw.bak <- tw
 
+amp<-fda::register.newfd(smoothed3$fd,tw)
+itw <- growthfd.bgs.invertTw(age, tw)
+
+model <- growthfd.bgs.model(amp, itw$fd)
 }
