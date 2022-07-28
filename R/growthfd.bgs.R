@@ -118,6 +118,7 @@ growthfd.bgs.interpolateNAs <- function(gatheredData) {
 #' 
 #' @param interpolatedData Data to be resampled.
 #' @return Resampled data
+#' @export
 growthfd.bgs.resample <- function(interpolatedData) {
   result <- list()
   ids <- unique(interpolatedData$id)
