@@ -440,6 +440,7 @@ growthfd.plotwarps <-function(model, deriv=0, ylim=NULL) {
 #' @param ncores Number of cores used for parallelisation
 #' @return Data frame with uniformly distributed data
 #' @export
+#' @example man/examples/digits.R
 growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
   # select ids with minimal count of measurements equal or higher than minCount
   cnt <- aggregate(data$ind, by=list(data$ind), FUN=length)

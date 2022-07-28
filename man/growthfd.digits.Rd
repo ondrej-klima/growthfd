@@ -21,3 +21,7 @@ Data frame with uniformly distributed data
 \description{
 Selects data with minimal count of measurements and convert them into a data frame.
 }
+\examples{
+data <- read.csv2('D:/growth/digits/data_muzi_all.csv', sep=";")
+result <- growthfd.digits(data=data, colName='X1_2_sur', minCount=9, ncores=4)
+}
