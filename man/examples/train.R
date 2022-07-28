@@ -1,48 +1,61 @@
 data <- read.table("D:/Growth/playground/data/bgs_07.txt", header=TRUE, sep="\t", na.strings="NA", dec=".")
-data <- data[!(data$id %in% growthfd.bgs.dropoutsIds.Height()) & data$sex == "1",]
+#data <- data[!(data$id %in% growthfd.bgs.dropoutsIds.Height()) & data$sex == "1",]
+data <- data[!(data$id %in% growthfd.bgs.dropoutsIds.Height()),]
 gather <- growthfd.bgs.gather(data)
 interp <- growthfd.bgs.interpolateNAs(gather)
 resampled <- growthfd.bgs.resample(interp)
-smoothed <- growthfd.bgs.smooth(resampled)
+#smoothed <- growthfd.bgs.smooth(resampled)
+smoothed <- growthfd.bgs.smooth(resampled, F)
+
+#age <- seq(10, 18, 0.05)
+#m<-growthfd.bgs.evalMonotone(smoothed$fd,age,1)
+#apvs<-growthfd.bgs.apvs(age,m)
+#ids <- unique(data$id)
 
 age <- seq(10, 18, 0.05)
-m<-growthfd.bgs.evalMonotone(smoothed,age,1)
+m<-growthfd.bgs.eval(smoothed$fd,age,1)
 apvs<-growthfd.bgs.apvs(age,m)
+ids <- unique(data$id)
+
+# Fix individuals with apv lower than 10
+age <- seq(7, 18, 0.05)
+m<-growthfd.bgs.evalMonotone(smoothed,age,1)
+apvs.na <- which(is.na(apvs))
+apvs[apvs.na]<-growthfd.bgs.apvs(age,m[,apvs.na])
+
+#age <- seq(0, 18, 0.05)
+#values <- growthfd.bgs.evalMonotone(smoothed,age)
+#vel <- growthfd.bgs.evalMonotone(smoothed,age,1)
+#acc <- growthfd.bgs.evalMonotone(smoothed,age,2)
+#growthfd.bgs.plotIndividuals(age, ids, apvs, values, vel, acc, gather)
+#growthfd.bgs.plotAll(age,acc, ylimit = c(-25, 25))
 
 age <- seq(0, 18, 0.05)
-ids <- unique(data$id)
-values <- growthfd.bgs.evalMonotone(smoothed,age)
-vel <- growthfd.bgs.evalMonotone(smoothed,age,1)
-acc <- growthfd.bgs.evalMonotone(smoothed,age,2)
-growthfd.bgs.plotIndividuals(age, ids, apvs, values, vel, acc, gather)
-growthfd.bgs.plotAll(age,acc, ylimit = c(-25, 25))
+values <- growthfd.bgs.eval(smoothed$fd,age)
+vel <- growthfd.bgs.eval(smoothed$fd,age,1)
+acc <- growthfd.bgs.eval(smoothed$fd,age,2)
+growthfd.bgs.plotIndividuals(age, ids, apvs, values, vel, acc, gather, 'plot_weight.pdf')
 
-smoothed2 <- growthfd.bgs.smooth(resampled, F)
-m2<-growthfd.bgs.eval(smoothed2$fd,age)
-values2 <- growthfd.bgs.eval(smoothed2$fd,age)
-vel2 <- growthfd.bgs.eval(smoothed2$fd,age,1)
-acc2 <- growthfd.bgs.eval(smoothed2$fd,age,2)
-growthfd.bgs.plotIndividuals(age, ids, apvs, values2, vel2, acc2, gather, filename = "plots2.pdf")
 
-resampled3 <- values
-dim(resampled3) <- c(prod(dim(values)), 1)
-resampled3 <- cbind(rep(ids, each=dim(values)[1]), rep(age, dim(values)[2]), resampled3[,1])
-colnames(resampled3) <- colnames(resampled)
-smoothed3 <- growthfd.bgs.smooth(resampled3, F)
-m3<-growthfd.bgs.eval(smoothed3$fd,age)
-values3 <- growthfd.bgs.eval(smoothed3$fd,age)
-vel3 <- growthfd.bgs.eval(smoothed3$fd,age,1)
-acc3 <- growthfd.bgs.eval(smoothed3$fd,age,2)
-growthfd.bgs.plotIndividuals(age, ids, apvs, values3, vel3, acc3, gather, filename = "plots3.pdf")
+resampled.new <- values
+dim(resampled.new) <- c(prod(dim(values)), 1)
+resampled.new <- cbind(rep(ids, each=dim(values)[1]), rep(age, dim(values)[2]), resampled.new[,1])
+colnames(resampled.new) <- colnames(resampled)
+smoothed.new <- growthfd.bgs.smooth(resampled.new, F)
 
 tw <- growthfd.bgs.registerCurvesToApvs(smoothed, apvs)
-reged<-fda::register.newfd(smoothed$yhatfd, tw)
-fda::register.newfd(accelfdUN, regListLM$warpfd)
-
-reged.bak<-fda::register.newfd(smoothed$yhatfd, tw)
-tw.bak <- tw
-
-amp<-fda::register.newfd(smoothed3$fd,tw)
+amp<-fda::register.newfd(smoothed.new$fd,tw)
 itw <- growthfd.bgs.invertTw(age, tw)
 
 model <- growthfd.bgs.model(amp, itw$fd)
+
+plDf <- data.frame('phasePC1'=model$warpfpca$scores[,1], 'amplitudePC1'=model$growthfpca$scores[,1], sex=factor(data$sex))
+ggplot2::ggplot(data = plDf, ggplot2::aes(x=phasePC1, y=amplitudePC1, colour=sex)) +
+  ggplot2::geom_point() +
+  ggplot2::stat_ellipse(geom = "polygon",linetype = 2,ggplot2::aes(fill = sex),alpha = 0.15) +
+  ggplot2::geom_rug() +
+  ggplot2::stat_smooth(method = "lm", fullrange = TRUE) +
+  ggplot2::scale_colour_manual(name = "Sex", values = c('blue', 'red'), labels=c('Male', 'Female')) +
+  ggplot2::scale_fill_manual(name = "Sex", values = c('blue', 'red'), labels=c('Male', 'Female'))
+
+

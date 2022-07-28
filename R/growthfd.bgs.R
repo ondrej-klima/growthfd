@@ -321,6 +321,32 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   return(fda::register.newfd(warpfdLM, warpfdCR))
 }
 
+#' Register curves on apvs and atfs
+#' 
+#' Computes the time-warping functions based on landmark-based registration 
+#' apv and atf points to the population means
+#' 
+#' @param fdaObject Fda object contaning the curves
+#' @param apvs Vector containing the respective apvs
+#' @param atfs Vector containing the atfs
+#' @return FDA object containing the time warping functions
+#' @export
+growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs, atfs) {
+  hgtfhatfd = fdaObject$yhatfd;
+  accelfdUN = fda::deriv.fd(hgtfhatfd, 2)
+  accelmeanfdUN = fda::mean.fd(accelfdUN)
+  PGSctr=apvs
+  PGSctrmean = mean(PGSctr)
+  ncases <- length(apvs)
+  
+  wbasisLM = fda::create.bspline.basis(c(0,18), 4, 3, c(0,PGSctrmean,18))
+  WfdLM = fda::fd(matrix(0,4,1),wbasisLM)
+  WfdParLM = fda::fdPar(WfdLM,1,1e-12)
+  
+  regListLM = fda::landmarkreg(accelfdUN, PGSctr, PGSctrmean, WfdParLM, TRUE)
+  
+}
+
 #' Compute inverse time-warping functions
 #' 
 #' Computes inverse for given functions.
@@ -328,7 +354,6 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
 #' @param age Vector of ages
 #' @param tw Fda object containing the time-warping functions
 #' @return Fda object containing the inverse functions
-#' @import splines 
 #' @export 
 growthfd.bgs.invertTw <- function(age, tw) {
   values=fda::eval.fd(age, tw)
@@ -405,3 +430,38 @@ growthfd.plotwarps <-function(model, deriv=0, ylim=NULL) {
   }
 }
 
+#' Preprocess a digit data
+#'
+#' Selects data with minimal count of measurements and convert them into a data frame.
+#' 
+#' @param data A csv table containing the measurements
+#' @param colName Name of the particular column with the length data
+#' @param minCount Minimal count of measurements
+#' @param ncores Number of cores used for parallelisation
+#' @return Data frame with uniformly distributed data
+#' @export
+growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
+  # select ids with minimal count of measurements equal or higher than minCount
+  cnt <- aggregate(data$ind, by=list(data$ind), FUN=length)
+  ids <- cnt[cnt[, 2] >= minCount, 1]
+  
+  # select corresponding data
+  col <- which(names(data) == colName)
+  data <- data[data$ind %in% ids, c(2,6,col)]
+  # remove duplicated data and convert to data frame
+  df <- as.data.frame(data[!duplicated(data[,c(1,2)]),])
+  names(df)[3] <- "value"
+  
+  res <- santaR::santaR_auto_fit(inputData = df, ind=df$ind, time=df$age, df=5, ncores=ncores)
+  
+  x <- res$value$groups[[1]]$groupMeanCurve$x
+  s <- seq(min(x), max(x), (max(x) - min(x)) / 100)
+  y <- list()
+  
+  for(i in seq(length(ids))) {
+    p <- stats::predict(res$value$groups[[1]]$curveInd[[i]], s)
+    y <- append(y, p$y)  
+  }
+  
+  result <- data.frame(id = rep(ids, each=length(s)), age = rep(s, length(ids)), valuei = unlist(y))
+}

@@ -4,17 +4,26 @@
 \alias{growthfd.bgs.registerCurvesToApvs}
 \title{Register curves to the apvs}
 \usage{
-growthfd.bgs.registerCurvesToApvs(fdaObject, apvs)
+growthfd.bgs.registerCurvesToApvs(fdaObject, apvs, atfs)
+
+growthfd.bgs.registerCurvesToApvs(fdaObject, apvs, atfs)
 }
 \arguments{
 \item{fdaObject}{Fda object contaning the curves}
 
 \item{apvs}{Vector containing the respective apvs}
+
+\item{atfs}{Vector containing the atfs}
 }
 \value{
+FDA object containing the time warping functions
+
 FDA object containing the time warping functions
 }
 \description{
 Calculates the time warping functions with respect to the supplied apvs 
 and the growth curves for the final refinement.
+
+Computes the time-warping functions based on landmark-based registration 
+apv and atf points to the population means
 }
