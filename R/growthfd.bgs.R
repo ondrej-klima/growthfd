@@ -260,6 +260,35 @@ growthfd.bgs.plotIndividuals <- function(age, ids, apvs, values, vel, acc, data,
   dev.off()
 }
 
+
+#' Plot individual points to pdf
+#' 
+#' Plots measured data points into separate figure for each individual. All plots
+#' are stored into a single pdf file, one figure per page.
+#' 
+#' @param age Vector of ages
+#' @param ids Vector containing ids
+#' @param apvs Vector containing apv for each individual
+#' @param values Matrix with value curves
+#' @param vel Matrix with velocity curves
+#' @param values Matrix with acceleration curves
+#' @param data Matrix with original data points
+#' @param filename File name of the output pdf
+#' @export
+growthfd.bgs.plotIndividualsPoints <- function(ids, data, filename="plots_points.pdf") {
+  n <- length(ids)
+  pdf(filename)
+  for(i in seq(n)) {
+    rows <- data$id == ids[i]
+    dfPts <- data.frame('age' = data$age[rows], 'v' = data$value[rows])
+    p <- ggplot2::ggplot(data = dfPts) +
+      ggplot2::geom_point(ggplot2::aes(x=age, y=v)) +
+      ggplot2::ggtitle(ids[i])
+    print(p)
+  }
+  dev.off()
+}
+
 #' Plot curves in one figure
 #' 
 #' Plots all curves from given matrix into a single figure.
@@ -443,15 +472,28 @@ growthfd.plotwarps <-function(model, deriv=0, ylim=NULL) {
 #' @export
 #' @example man/examples/digits.R
 growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
+  # select data column
+  col <- which(names(data) == colName)
+  data <- data[, c(2,6,col)]
+  
+  # omit incomplete observations
+  data <- data[stats::complete.cases(data), ]
+  
+  # remove duplicated data and convert to data frame
+  dup <- duplicated(data[,c(1,2)])
+  message('Duplicated data')
+  data_dup <- data[dup,]
+  print(data_dup)
+  data <- data[!dup,]
+  
   # select ids with minimal count of measurements equal or higher than minCount
   cnt <- aggregate(data$ind, by=list(data$ind), FUN=length)
   ids <- cnt[cnt[, 2] >= minCount, 1]
   
-  # select corresponding data
-  col <- which(names(data) == colName)
-  data <- data[data$ind %in% ids, c(2,6,col)]
-  # remove duplicated data and convert to data frame
-  df <- as.data.frame(data[!duplicated(data[,c(1,2)]),])
+  # select chosen ids
+  data <- data[data$ind %in% ids,]
+  
+  df <- as.data.frame(data)
   names(df)[3] <- "value"
   
   res <- santaR::santaR_auto_fit(inputData = df, ind=df$ind, time=df$age, df=5, ncores=ncores)
@@ -460,10 +502,23 @@ growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
   s <- seq(min(x), max(x), (max(x) - min(x)) / 100)
   y <- list()
   
+  acceptedIds <- c()
+  
   for(i in seq(length(ids))) {
-    p <- stats::predict(res$value$groups[[1]]$curveInd[[i]], s)
-    y <- append(y, p$y)  
+    if(!is.null(res$value$groups[[1]]$curveInd[[i]])) { 
+      p <- stats::predict(res$value$groups[[1]]$curveInd[[i]], s)
+      y <- append(y, p$y)
+      acceptedIds <- c(acceptedIds, ids[i])
+    }
+    else {
+      message(sprintf('Rejected id: %d', ids[i]))
+    }
   }
   
-  result <- data.frame(id = rep(ids, each=length(s)), age = rep(s, length(ids)), valuei = unlist(y))
+  return(list(data.frame(id = rep(acceptedIds, each=length(s)), 
+                         age = rep(s, length(acceptedIds)), 
+                         valuei = unlist(y)),
+              setdiff(ids, acceptedIds),
+              data_dup)
+         )
 }
