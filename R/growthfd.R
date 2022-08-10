@@ -34,12 +34,12 @@ growthfd <- function(data,
   y.na <- as.numeric(eval(mcall$y, data))
   id.na <- as.factor(eval(mcall$id, data))
     
-  msk <- !is.na(x.na) & !is.na(y.na) & x.na <= 18 & x.na >= 0
+  msk <- !is.na(x.na) & !is.na(y.na) & x.na <= 18 & x.na >= 8
   x <- x.na[msk]
   y <- y.na[msk]
   id <- id.na[msk]
   
-  msk <- !is.na(x.na) & x.na <= 18 & x.na >= 0
+  msk <- !is.na(x.na) & x.na <= 18 & x.na >= 8
   x.na <- x.na[msk]
   y.na <- y.na[msk]
   id.na <- id.na[msk]
@@ -53,16 +53,18 @@ growthfd <- function(data,
   colnames(milestones) <- c('apv', 'vpv', 'hpv', 'atf', 'vtf', 'htf')
   w.m <- matrix(NA, n, 2)
   colnames(w.m) <- c('apv', 'atf')
-  fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double())
+  fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double(),
+                       'age' = double(), 'apv' = double())
   
-  sampling <- seq(0, 18, 0.25)
+  # sampling <- seq(0, 18, 0.25)
+  sampling <- seq(8, 19.5, 0.25)
   m <- length(sampling)
   stature <- matrix(NA, n, m)
   velocity <- matrix(NA, n, m)
   acceleration <- matrix(NA, n, m)
   
   # Determine model apv and atf
-  m_x <- seq(7, 18, 0.05)
+  m_x <- seq(8, 18, 0.05)
   m_y <- growthfd.evaluate(m_x, 
                            rep(0, sum(model$scores.elements)), 
                            model, 
@@ -92,6 +94,9 @@ growthfd <- function(data,
       if(verbose > 0) {
         message(sprintf("Processing individual with id '%s' (%d/%d), containing %d measurements\n", ids[i], i, n, sum(msk)))
       }
+      # message(x[msk])
+      # message(y[msk])
+      
       fit <- growthfd.fit(model, x[msk], y[msk], verbose)
       scores[i,] <- fit$par
       
@@ -183,10 +188,12 @@ growthfd <- function(data,
     milestones[i, 'vpv'] <- peak.xyi_apv[2]
     
     # atf
-    m_x_atf <- seq(w_atf-bound, upper, 0.05)
+    #m_x_atf <- seq(w_atf-bound, upper, 0.05)
+    m_x_atf <- seq(8, upper, 0.05)
     # m_x_atf <- seq(7, 18, 0.05)
     m_y_atf <- growthfd.evaluate(m_x_atf, scores[i,], model, deriv=1)
     xyi <- data.frame('x'=m_x_atf, 'y'=m_y_atf)
+    
     
     takeoff.xyi <- sitar::getTakeoff(xyi)
     milestones[i, 'atf'] <- takeoff.xyi[1]
@@ -202,12 +209,17 @@ growthfd <- function(data,
       milestones[i, 'htf'] <- growthfd.evaluate(milestones[i, 'atf'], scores[i,], model)
     }
     
+    
     # Evaluation of fits and residuals
     msk.na <- id.na == ids[i]
     
     f <- growthfd.evaluate(x.na[msk.na], scores[i,], model)
     r <- f - y.na[msk.na]
-    fitted <- rbind(fitted, data.frame('id'=id.na[msk.na], 'fitted'=f, 'residuals'=r))
+    fitted <- rbind(fitted, data.frame('id'=id.na[msk.na], 
+                                       'fitted'=f, 
+                                       'residuals'=r, 
+                                       'age' = x.na[msk.na],
+                                       'apv' = rep(milestones[i, 'apv'], length(f))))
     
     # Evaluations of stature, velocity and acceleration
     stature[i,] <- growthfd.evaluate(sampling, scores[i,], model)
@@ -220,7 +232,7 @@ growthfd <- function(data,
   print(total_t)
   
   
-  colnames(fitted) <- c('id', 'fitted', 'residuum')
+  colnames(fitted) <- c('id', 'fitted', 'residuum', 'age', 'apv')
   growthfd.result <-list('ids' = ids, 'scores' = scores, 'milestones' = milestones, 
        'fitted' = fitted, 'stature' = stature, 'velocity' = velocity, 
        'acceleration' = acceleration, 'sampling' = sampling, 'wm' = w.m,

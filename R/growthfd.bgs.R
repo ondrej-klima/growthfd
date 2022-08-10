@@ -331,7 +331,8 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   PGSctrmean = mean(PGSctr)
   ncases <- length(apvs)
   
-  wbasisLM = fda::create.bspline.basis(c(0,18), 4, 3, c(0,PGSctrmean,18))
+  # wbasisLM = fda::create.bspline.basis(c(0,18), 4, 3, c(0,PGSctrmean,18))
+  wbasisLM = fda::create.bspline.basis(c(min(fdaObject$argvals),max(fdaObject$argvals)), 4, 3, c(min(fdaObject$argvals),PGSctrmean,max(fdaObject$argvals)))
   WfdLM = fda::fd(matrix(0,4,1),wbasisLM)
   WfdParLM = fda::fdPar(WfdLM,1,1e-12)
   
@@ -342,7 +343,8 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   warpfdLM = regListLM$warpfd
   WfdLM = regListLM$Wfd
   
-  wbasisCR = fda::create.bspline.basis(c(0,18), 15, 5)
+  # wbasisCR = fda::create.bspline.basis(c(0,18), 15, 5)
+  wbasisCR = fda::create.bspline.basis(c(min(fdaObject$argvals),max(fdaObject$argvals)), 15, 5)
   Wfd0CR = fda::fd(matrix(0,15,ncases),wbasisCR)
   WfdParCR = fda::fdPar(Wfd0CR, 1, 1)
   regList = fda::register.fd(accelmeanfdLM,accelfdLM, WfdParCR)
@@ -361,7 +363,7 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
 #' @param atfs Vector containing the atfs
 #' @return FDA object containing the time warping functions
 #' @export
-growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs, atfs) {
+growthfd.bgs.registerCurvesToApvsAtfs <- function(fdaObject, apvs, atfs) {
   hgtfhatfd = fdaObject$yhatfd;
   accelfdUN = fda::deriv.fd(hgtfhatfd, 2)
   accelmeanfdUN = fda::mean.fd(accelfdUN)
@@ -388,9 +390,9 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs, atfs) {
 growthfd.bgs.invertTw <- function(age, tw) {
   values=fda::eval.fd(age, tw)
   
-  values[1,] = 0
-  values[361,] = 18
-  rng <-c(0,18)
+  values[1,] = min(age)
+  values[length(age),] = max(age)
+  rng <-c(min(age),max(age))
   
   nage <- dim(values)[1]
   ncases <- dim(values)[2]
@@ -444,11 +446,10 @@ growthfd.bgs.model <- function(amplitude, itw, nharm=6) {
 #' @param deriv Derivation of the growth curve
 #' @param ylim Limits the scale of y axis 
 #' @export
-growthfd.plotwarps <-function(model, deriv=0, ylim=NULL) {
+growthfd.plotwarps <-function(model, deriv=0, ylim=NULL, age = seq(0,18,.05)) {
   windows(width=7,height=12,rescale=c("fixed"))
   nwarpscores = model$scores.elements[1];
   nparams = sum(model$scores.elements) + 2;
-  age = seq(0,18,.05)
   par(mfrow=c(ceiling(.25*nparams),3))
   for(i in 1:sum(model$scores.elements)) {
     params <- rep(0, nparams);
