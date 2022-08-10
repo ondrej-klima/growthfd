@@ -60,3 +60,8 @@ growthfd.plotwarps(model, age=seq(min(9, 18, 0.05)))
 
 data.df <- as.data.frame(data)
 data.df$id <- as.factor(data.df$ind)
+
+r2 <- growthfd(data=data.df[data.df$id %in% c(1001,1002,1003,1004),], x=age, y=mt2_A, model = model, id=id, parallel = T)
+r <- growthfd(data=data.df, x=age, y=mt2_A, model = model, id=id, parallel = F)
+growthfd.bgs.plotIndividuals(age = r$sampling, ids = r$ids, apvs = r$milestones[,1], values=t(r$stature), vel = t(r$velocity), acc=t(r$acceleration), data = data.df, filename='plot_mt2_A_fit.pdf')
+
