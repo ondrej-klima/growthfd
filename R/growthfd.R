@@ -56,8 +56,8 @@ growthfd <- function(data,
   fitted <- data.frame('id'=factor(), 'fitted'=double(), 'residuals'=double(),
                        'age' = double(), 'apv' = double())
   
-  # sampling <- seq(0, 18, 0.25)
-  sampling <- seq(8, 19.5, 0.25)
+  sampling <- seq(0, 18, 0.25)
+  # sampling <- seq(8, 19.5, 0.25)
   m <- length(sampling)
   stature <- matrix(NA, n, m)
   velocity <- matrix(NA, n, m)
