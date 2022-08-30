@@ -18,5 +18,5 @@ growthfd.std <- function(par, model) {
     growthfd <- growthfd + growthscores[i]*sqrt(model$growthfpca$values[i])*model$growthfpca$harmonics[i];
   }
   
-  return(fda::register.newfd(growthfd, growthfd.warpfd(par, model)));
+  return(fda::register.newfd(growthfd, growthfd.warpfd(par, model),"direct"));
 }
