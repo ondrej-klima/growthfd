@@ -57,7 +57,7 @@ growthfd <- function(data,
                        'age' = double(), 'apv' = double())
   
   # sampling <- seq(0, 18, 0.25)
-  sampling <- seq(7.6, 19.7, 0.25)
+  # sampling <- seq(8, 19.5, 0.25)
   m <- length(sampling)
   stature <- matrix(NA, n, m)
   velocity <- matrix(NA, n, m)
