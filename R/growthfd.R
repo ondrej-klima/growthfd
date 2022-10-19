@@ -34,12 +34,12 @@ growthfd <- function(data,
   y.na <- as.numeric(eval(mcall$y, data))
   id.na <- as.factor(eval(mcall$id, data))
     
-  msk <- !is.na(x.na) & !is.na(y.na) & x.na <= 18 & x.na >= 8
+  msk <- !is.na(x.na) & !is.na(y.na) & x.na <= 20 & x.na >= 7.5
   x <- x.na[msk]
   y <- y.na[msk]
   id <- id.na[msk]
   
-  msk <- !is.na(x.na) & x.na <= 18 & x.na >= 8
+  msk <- !is.na(x.na) & x.na <= 20 & x.na >= 7.5
   x.na <- x.na[msk]
   y.na <- y.na[msk]
   id.na <- id.na[msk]
@@ -57,7 +57,7 @@ growthfd <- function(data,
                        'age' = double(), 'apv' = double())
   
   # sampling <- seq(0, 18, 0.25)
-  sampling <- seq(8, 19.5, 0.25)
+  sampling <- seq(7.6, 19.7, 0.25)
   m <- length(sampling)
   stature <- matrix(NA, n, m)
   velocity <- matrix(NA, n, m)
@@ -217,7 +217,7 @@ growthfd <- function(data,
     r <- f - y.na[msk.na]
     fitted <- rbind(fitted, data.frame('id'=id.na[msk.na], 
                                        'fitted'=f, 
-                                       'residuals'=r, 
+                                       'residuals'=r,
                                        'age' = x.na[msk.na],
                                        'apv' = rep(milestones[i, 'apv'], length(f))))
     

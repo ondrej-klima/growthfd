@@ -353,6 +353,37 @@ growthfd.bgs.registerCurvesToApvs <- function(fdaObject, apvs) {
   return(fda::register.newfd(warpfdLM, warpfdCR))
 }
 
+
+growthfd.bgs.registerCurvesToApvs.nonmonotone <- function(fdaObject, apvs) {
+  hgtfhatfd = fdaObject$fd;
+  accelfdUN = fda::deriv.fd(hgtfhatfd, 2)
+  accelmeanfdUN = fda::mean.fd(accelfdUN)
+  PGSctr=apvs
+  PGSctrmean = mean(PGSctr)
+  ncases <- length(apvs)
+  
+  # wbasisLM = fda::create.bspline.basis(c(0,18), 4, 3, c(0,PGSctrmean,18))
+  wbasisLM = fda::create.bspline.basis(c(min(fdaObject$argvals),max(fdaObject$argvals)), 4, 3, c(min(fdaObject$argvals),PGSctrmean,max(fdaObject$argvals)))
+  WfdLM = fda::fd(matrix(0,4,1),wbasisLM)
+  WfdParLM = fda::fdPar(WfdLM,1,1e-12)
+  
+  regListLM = fda::landmarkreg(accelfdUN, PGSctr, PGSctrmean, WfdParLM, TRUE)
+  
+  accelfdLM = regListLM$regfd
+  accelmeanfdLM = fda::mean.fd(accelfdLM)
+  warpfdLM = regListLM$warpfd
+  WfdLM = regListLM$Wfd
+  
+  # wbasisCR = fda::create.bspline.basis(c(0,18), 15, 5)
+  wbasisCR = fda::create.bspline.basis(c(min(fdaObject$argvals),max(fdaObject$argvals)), 15, 5)
+  Wfd0CR = fda::fd(matrix(0,15,ncases),wbasisCR)
+  WfdParCR = fda::fdPar(Wfd0CR, 1, 1)
+  regList = fda::register.fd(accelmeanfdLM,accelfdLM, WfdParCR)
+  warpfdCR = regList$warpfd
+  
+  return(fda::register.newfd(warpfdLM, warpfdCR))
+}
+
 #' Register curves on apvs and atfs
 #' 
 #' Computes the time-warping functions based on landmark-based registration 
@@ -497,7 +528,7 @@ growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
   df <- as.data.frame(data)
   names(df)[3] <- "value"
   
-  res <- santaR::santaR_auto_fit(inputData = df, ind=df$ind, time=df$age, df=5, ncores=ncores)
+  res <- santaR::santaR_auto_fit(inputData = df, ind=df$ind, time=df$age, df=8, ncores=ncores)
   
   x <- res$value$groups[[1]]$groupMeanCurve$x
   s <- seq(min(x), max(x), (max(x) - min(x)) / 100)
@@ -522,4 +553,52 @@ growthfd.digits <- function(data, colName, minCount = 9, ncores = 4) {
               setdiff(ids, acceptedIds),
               data_dup)
          )
+}
+
+growthfd.digits.spline <- function(data, colName, minCount = 9) {
+  # select data column
+  col <- which(names(data) == colName)
+  data <- data[, c(2,6,col)]
+  
+  # omit incomplete observations
+  data <- data[stats::complete.cases(data), ]
+  
+  # remove duplicated data and convert to data frame
+  dup <- duplicated(data[,c(1,2)])
+  message('Duplicated data')
+  data_dup <- data[dup,]
+  print(data_dup)
+  data <- data[!dup,]
+  
+  # select ids with minimal count of measurements equal or higher than minCount
+  cnt <- aggregate(data$ind, by=list(data$ind), FUN=length)
+  ids <- cnt[cnt[, 2] >= minCount, 1]
+  
+  # select chosen ids
+  msk <- data$ind %in% ids
+  data <- data[msk,]
+  min_x <- 7.5 # min(data$age)
+  max_x <- 20  # max(data$age)
+ 
+  s <- seq(min_x, max_x, (max_x - min_x) / 100)
+  y <- list()
+  
+  acceptedIds <- c()
+  
+  for(i in seq(length(ids))) {
+    msk <- data$ind == ids[i]
+    i_x <- data[msk, 2]
+    i_y <- data[msk, 3]
+    sp <- stats::smooth.spline(i_x,i_y,df=length(i_x)-1)
+    p <- stats::predict(sp, s)
+    y <- append(y, p$y)
+    acceptedIds <- c(acceptedIds, ids[i])
+  }
+  
+  return(list(data.frame(id = rep(acceptedIds, each=length(s)), 
+                         age = rep(s, length(acceptedIds)), 
+                         valuei = unlist(y)),
+              setdiff(ids, acceptedIds),
+              data_dup)
+  )
 }

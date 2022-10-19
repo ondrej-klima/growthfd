@@ -11,6 +11,9 @@
 #' @export
 growthfd.residuals <- function(x, y, par, model) {
   suppressWarnings(p <- growthfd.evaluate(x, par, model));
-  residuals <- c(p - y, par);
+  d <- diff(growthfd.evaluate(seq(7.5, 20, 0.5), par, model))
+  d[d > 0] <- 0
+  # residuals <- c(10 * (p - y), par, 100 * d * sum(d < 0));
+  residuals <- c(10 * (p - y), par, 10* d);
   return(residuals);
 }

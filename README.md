@@ -6,12 +6,11 @@ Fitting of FPCA-based growth curve model using Levenberg-Marquardt optimization.
 ## Installation
 
 ```r
-# Install devtools from CRAN
-install.packages("devtools")
-library("devtools")
-
-# Install growthfd from GitHub:
-install_github("ondrej-klima/growthfd")
+install.packages("BiocManager")
+BiocManager::install("pcaMethods", ask=FALSE)
+install.packages("remotes")
+remotes::install_version("fda", version="2.4.8.1")
+remotes::install_github("ondrej-klima/growthfd", upgrage="never")
 ```
 
 ## Usage
