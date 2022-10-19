@@ -10,7 +10,7 @@ install.packages("BiocManager")
 BiocManager::install("pcaMethods", ask=FALSE)
 install.packages("remotes")
 remotes::install_version("fda", version="2.4.8.1")
-remotes::install_github("ondrej-klima/growthfd", upgrage="never")
+remotes::install_github("ondrej-klima/growthfd", upgrade="never")
 ```
 
 ## Usage
