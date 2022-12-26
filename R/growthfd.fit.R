@@ -21,8 +21,8 @@ growthfd.fit <- function(model, age, height, nprint=1) {
     y = height, 
     model=model, 
     control = minpack.lm::nls.lm.control(nprint=nprint),
-    upper=rep(20,npar), 
-    lower=rep(-20,npar)))
+    upper=rep(3,npar), 
+    lower=rep(-3,npar)))
   
 #    upper=c(10,10,10,3,3,3,10,10,10,1000,3,3), #rep(10,npar), 
 #    lower=-c(10,10,10,3,3,3,10,10,10,1000,3,3))) #rep(-10,npar)))

@@ -14,7 +14,14 @@ growthfd.evaluate <- function(x, par, model, deriv=0) {
   nscores <- sum(model$scores.elements);
   scores <- par[1:sum(nscores)];
   
+  #message('eval begin')
+  
   suppressWarnings(growthfd <- growthfd.std(scores, model))
+  #message(sprintf('%f ', x))
   suppressWarnings(r <- fda::eval.fd(x, growthfd, deriv))
+  
+  #message('eval end')
+  
+  
   return(r);
 }
